@@ -112,6 +112,7 @@ function onSceneLoad(scene) {
       videoElement = document.createElement('video');
       videoElement.src = scene.video;
       videoElement.loop = true;
+      videoElement.preload = "auto";
       videoElement.setAttribute('crossorigin', 'anonymous');
       videoElement.addEventListener('canplaythrough', onVideoLoad);
       videoElement.addEventListener('error', onVideoError);
