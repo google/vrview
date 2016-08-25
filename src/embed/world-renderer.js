@@ -215,7 +215,7 @@ WorldRenderer.prototype.init_ = function() {
   this.renderer = renderer;
   this.effect = effect;
   this.controls = controls;
-  this.manager = new WebVRManager(renderer, effect, {predistorted: true});
+  this.manager = new WebVRManager(renderer, effect, {predistorted: false});
 
   this.scene = this.createScene_();
   this.scene.add(this.camera.parent);
