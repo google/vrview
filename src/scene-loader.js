@@ -53,6 +53,9 @@ SceneLoader.prototype.loadFromJson_ = function(url, callback) {
       var label = new Label(labels[i]);
       labelObjects[label.id] = label;
     }
+    if (jsonObj.yaw !== undefined) {
+      jsonObj.yaw = THREE.Math.degToRad(jsonObj.yaw);
+    }
     jsonObj.labels = labelObjects;
     var scene = new SceneInfo(jsonObj);
     that.emit('load', scene);
