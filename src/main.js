@@ -97,7 +97,7 @@ function onSceneLoad(scene) {
     renderer.on('load', onPreviewLoad);
     renderer.setPhotosphere(scene.preview, params);
   } else if (scene.video) {
-    if (Util.isIOS() || Util.isIE11()) {
+    if (Util.isIE11()) {
       // On iOS and IE 11, if an 'image' param is provided, load it instead of
       // showing an error.
       //
@@ -112,9 +112,15 @@ function onSceneLoad(scene) {
       videoElement = document.createElement('video');
       videoElement.src = scene.video;
       videoElement.loop = true;
+      videoElement.preload = true;
       videoElement.setAttribute('crossorigin', 'anonymous');
+      videoElement.setAttribute('playsinline', true);
       videoElement.addEventListener('canplaythrough', onVideoLoad);
       videoElement.addEventListener('error', onVideoError);
+      if(Util.isIOS()) {
+        // iOS isn't goign to do anything with a video element without user interaction. Fire off the request to the user.
+        onVideoLoad();
+      }
     }
   } else if (scene.image) {
     // Otherwise, just render the photosphere.
