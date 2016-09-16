@@ -18,9 +18,6 @@
 var LoadingIndicator = require('./loading-indicator');
 var loadIndicator = new LoadingIndicator();
 
-var ES6Promise = require('es6-promise');
-// Polyfill ES6 promises for IE.
-ES6Promise.polyfill();
 
 var IFrameMessageReceiver = require('./iframe-message-receiver');
 var Message = require('../message');

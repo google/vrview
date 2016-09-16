@@ -1,5 +1,4 @@
 var EventEmitter = require('eventemitter3');
-var shaka = require('shaka-player');
 
 var Types = {
   HLS: 1,
@@ -19,20 +18,14 @@ var Types = {
  */
 function AdaptivePlayer() {
   this.video = document.createElement('video');
-
-  // Install built-in polyfills to patch browser incompatibilities.
-  shaka.polyfill.installAll();
-
-  if (!shaka.Player.isBrowserSupported()) {
-    console.error('Shaka is not supported on this browser.');
-  } else {
-    this.initShaka_();
-  }
-
 }
 AdaptivePlayer.prototype = new EventEmitter();
 
 AdaptivePlayer.prototype.load = function(url) {
+  this.initShaka_().then(function () {
+
+  })
+
   var self = this;
   // TODO(smus): Investigate whether or not differentiation is best done by
   // mimeType after all. Cursory research suggests that adaptive streaming
@@ -76,10 +69,28 @@ AdaptivePlayer.prototype.destroy = function() {
 /*** PRIVATE API ***/
 
 AdaptivePlayer.prototype.initShaka_ = function() {
-  this.player = new shaka.Player(this.video);
 
-  // Listen for error events.
-  this.player.addEventListener('error', this.onError_);
+  return new Promise (function(resolve, reject) {
+    // Load the Shaka player only on demand.
+    var script = document.createElement('script');
+    script.src = 'node_modules/shaka-player/dist/shaka-player.compiled.js';
+    script.onload = resolve;
+    script.onerror = reject;
+  }).then(function() {
+    // Install built-in polyfills to patch browser incompatibilities.
+    shaka.polyfill.installAll();
+
+    if (!shaka.Player.isBrowserSupported()) {
+      console.error('Shaka is not supported on this browser.');
+    } else {
+      this.initShaka_();
+    }
+
+    this.player = new shaka.Player(this.video);
+
+    // Listen for error events.
+    this.player.addEventListener('error', this.onError_);
+  }, this.onError_);
 };
 
 AdaptivePlayer.prototype.onError_ = function(e) {

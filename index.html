@@ -31,9 +31,54 @@ WebVRConfig = {
 };
     </script>
 
-    <script src="node_modules/three/build/three.js"></script>
-    <script src="node_modules/three/examples/js/controls/VRControls.js"></script>
-    <script src="node_modules/three/examples/js/effects/VREffect.js"></script>
-    <script src="build/embed.js"></script>
+    <script>
+      (function () {
+        function loadScript(src, options) {
+          var script = document.createElement('script');
+          script.src = src;
+          script.async = false;
+          document.head.appendChild(script);
+
+          if (options.returnPromise) {
+            return new Promise(function(resolve, reject) {
+              script.onload = resolve;
+              script.onerror = reject;
+            });
+          }
+
+          script.onload = options.callbackSuccess;
+          script.onerror = options.callbackError;
+        }
+
+        function loadPageScripts () {
+          var files = [
+            'node_modules/three/build/three.js',
+            'node_modules/three/examples/js/controls/VRControls.js',
+            'node_modules/three/examples/js/effects/VREffect.js',
+            'build/embed.js'
+          ];
+
+          if (!('getVRDisplays' in navigator)) {
+            files.unshift(
+              'node_modules/webvr-polyfill/build/webvr-polyfill.js'
+            );
+          }
+
+          let load = Promise.resolve();
+
+          // Rewrite each file to a Promise.
+          for (var i = 0; i < files.length; i++) {
+            files[i] = loadScript(files[i], {returnPromise: true});
+          }
+        }
+
+        if (!'Promise' in window) {
+          return loadScript('node_modules/es6-promise/es6-promise.min.js',
+            loadPageScripts);
+        }
+
+        loadPageScripts();
+      })();
+    </script>
 	</body>
 </html>
