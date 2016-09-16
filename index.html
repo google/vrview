@@ -39,8 +39,10 @@ WebVRConfig = {
           script.async = false;
           document.head.appendChild(script);
 
-          script.onload = options && options.callbackSuccess;
-          script.onerror = options && options.callbackError;
+          if (typeof options !== 'undefined') {
+            script.onload = options.callbackSuccess;
+            script.onerror = options.callbackError;
+          }
         }
 
         function loadPageScripts () {
