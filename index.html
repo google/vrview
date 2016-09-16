@@ -64,11 +64,10 @@ WebVRConfig = {
             );
           }
 
-          let load = Promise.resolve();
-
-          // Rewrite each file to a Promise.
+          // Load each file. Since async is false, these will be
+          // executed in order.
           for (var i = 0; i < files.length; i++) {
-            files[i] = loadScript(files[i], {returnPromise: true});
+            loadScript(files[i], {returnPromise: true});
           }
         }
 
