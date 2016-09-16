@@ -1,3 +1,8 @@
+import { PathPrototype } from './PathPrototype';
+import { ShapeGeometry } from '../geometries/ShapeGeometry';
+import { ExtrudeGeometry } from '../geometries/ExtrudeGeometry';
+import { Path } from './Path';
+
 /**
  * @author zz85 / http://www.lab4games.net/zz85/blog
  * Defines a 2d shape plane using paths.
@@ -9,67 +14,68 @@
 // STEP 3a - Extract points from each shape, turn to vertices
 // STEP 3b - Triangulate each shape, add faces.
 
-THREE.Shape = function () {
+function Shape() {
 
-	THREE.Path.apply( this, arguments );
+	Path.apply( this, arguments );
 
 	this.holes = [];
 
-};
+}
 
-THREE.Shape.prototype = Object.create( THREE.Path.prototype );
-THREE.Shape.prototype.constructor = THREE.Shape;
+Shape.prototype = Object.assign( Object.create( PathPrototype ), {
 
-// Convenience method to return ExtrudeGeometry
+	constructor: Shape,
 
-THREE.Shape.prototype.extrude = function ( options ) {
+	// Convenience method to return ExtrudeGeometry
 
-	return new THREE.ExtrudeGeometry( this, options );
+	extrude: function ( options ) {
 
-};
+		return new ExtrudeGeometry( this, options );
 
-// Convenience method to return ShapeGeometry
+	},
 
-THREE.Shape.prototype.makeGeometry = function ( options ) {
+	// Convenience method to return ShapeGeometry
 
-	return new THREE.ShapeGeometry( this, options );
+	makeGeometry: function ( options ) {
 
-};
+		return new ShapeGeometry( this, options );
 
-// Get points of holes
+	},
 
-THREE.Shape.prototype.getPointsHoles = function ( divisions ) {
+	getPointsHoles: function ( divisions ) {
 
-	var holesPts = [];
+		var holesPts = [];
 
-	for ( var i = 0, l = this.holes.length; i < l; i ++ ) {
+		for ( var i = 0, l = this.holes.length; i < l; i ++ ) {
 
-		holesPts[ i ] = this.holes[ i ].getPoints( divisions );
+			holesPts[ i ] = this.holes[ i ].getPoints( divisions );
+
+		}
+
+		return holesPts;
+
+	},
+
+	// Get points of shape and holes (keypoints based on segments parameter)
+
+	extractAllPoints: function ( divisions ) {
+
+		return {
+
+			shape: this.getPoints( divisions ),
+			holes: this.getPointsHoles( divisions )
+
+		};
+
+	},
+
+	extractPoints: function ( divisions ) {
+
+		return this.extractAllPoints( divisions );
 
 	}
 
-	return holesPts;
-
-};
+} );
 
 
-// Get points of shape and holes (keypoints based on segments parameter)
-
-THREE.Shape.prototype.extractAllPoints = function ( divisions ) {
-
-	return {
-
-		shape: this.getPoints( divisions ),
-		holes: this.getPointsHoles( divisions )
-
-	};
-
-};
-
-THREE.Shape.prototype.extractPoints = function ( divisions ) {
-
-	return this.extractAllPoints( divisions );
-
-};
-
-THREE.Shape.Utils = THREE.ShapeUtils; // backwards compatibility
+export { Shape };

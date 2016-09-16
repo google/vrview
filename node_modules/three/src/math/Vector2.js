@@ -5,22 +5,42 @@
  * @author zz85 / http://www.lab4games.net/zz85/blog
  */
 
-THREE.Vector2 = function ( x, y ) {
+function Vector2( x, y ) {
 
 	this.x = x || 0;
 	this.y = y || 0;
 
-};
+}
 
-THREE.Vector2.prototype = {
+Vector2.prototype = {
 
-	constructor: THREE.Vector2,
+	constructor: Vector2,
 
-	get width() { return this.x },
-	set width( value ) { this.x = value },
+	isVector2: true,
 
-	get height() { return this.y },
-	set height( value ) { this.y = value },
+	get width() {
+
+		return this.x;
+
+	},
+
+	set width( value ) {
+
+		this.x = value;
+
+	},
+
+	get height() {
+
+		return this.y;
+
+	},
+
+	set height( value ) {
+
+		this.y = value;
+
+	},
 
 	//
 
@@ -28,6 +48,15 @@ THREE.Vector2.prototype = {
 
 		this.x = x;
 		this.y = y;
+
+		return this;
+
+	},
+
+	setScalar: function ( scalar ) {
+
+		this.x = scalar;
+		this.y = scalar;
 
 		return this;
 
@@ -177,11 +206,15 @@ THREE.Vector2.prototype = {
 	multiplyScalar: function ( scalar ) {
 
 		if ( isFinite( scalar ) ) {
+
 			this.x *= scalar;
 			this.y *= scalar;
+
 		} else {
+
 			this.x = 0;
 			this.y = 0;
+
 		}
 
 		return this;
@@ -240,8 +273,8 @@ THREE.Vector2.prototype = {
 
 			if ( min === undefined ) {
 
-				min = new THREE.Vector2();
-				max = new THREE.Vector2();
+				min = new Vector2();
+				max = new Vector2();
 
 			}
 
@@ -258,9 +291,7 @@ THREE.Vector2.prototype = {
 
 		var length = this.length();
 
-		this.multiplyScalar( Math.max( min, Math.min( max, length ) ) / length );
-
-		return this;
+		return this.multiplyScalar( Math.max( min, Math.min( max, length ) ) / length );
 
 	},
 
@@ -339,6 +370,18 @@ THREE.Vector2.prototype = {
 
 	},
 
+	angle: function () {
+
+		// computes the angle in radians with respect to the positive x-axis
+
+		var angle = Math.atan2( this.y, this.x );
+
+		if ( angle < 0 ) angle += 2 * Math.PI;
+
+		return angle;
+
+	},
+
 	distanceTo: function ( v ) {
 
 		return Math.sqrt( this.distanceToSquared( v ) );
@@ -349,6 +392,12 @@ THREE.Vector2.prototype = {
 
 		var dx = this.x - v.x, dy = this.y - v.y;
 		return dx * dx + dy * dy;
+
+	},
+
+	distanceToManhattan: function ( v ) {
+
+		return Math.abs( this.x - v.x ) + Math.abs( this.y - v.y );
 
 	},
 
@@ -369,9 +418,7 @@ THREE.Vector2.prototype = {
 
 	lerpVectors: function ( v1, v2, alpha ) {
 
-		this.subVectors( v2, v1 ).multiplyScalar( alpha ).add( v1 );
-
-		return this;
+		return this.subVectors( v2, v1 ).multiplyScalar( alpha ).add( v1 );
 
 	},
 
@@ -432,3 +479,6 @@ THREE.Vector2.prototype = {
 	}
 
 };
+
+
+export { Vector2 };

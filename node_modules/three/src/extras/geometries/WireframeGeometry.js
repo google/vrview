@@ -1,10 +1,13 @@
+import { BufferGeometry } from '../../core/BufferGeometry';
+import { BufferAttribute } from '../../core/BufferAttribute';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-THREE.WireframeGeometry = function ( geometry ) {
+function WireframeGeometry( geometry ) {
 
-	THREE.BufferGeometry.call( this );
+	BufferGeometry.call( this );
 
 	var edge = [ 0, 0 ], hash = {};
 
@@ -16,7 +19,7 @@ THREE.WireframeGeometry = function ( geometry ) {
 
 	var keys = [ 'a', 'b', 'c' ];
 
-	if ( geometry instanceof THREE.Geometry ) {
+	if ( (geometry && geometry.isGeometry) ) {
 
 		var vertices = geometry.vertices;
 		var faces = geometry.faces;
@@ -67,9 +70,9 @@ THREE.WireframeGeometry = function ( geometry ) {
 
 		}
 
-		this.addAttribute( 'position', new THREE.BufferAttribute( coords, 3 ) );
+		this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
 
-	} else if ( geometry instanceof THREE.BufferGeometry ) {
+	} else if ( (geometry && geometry.isBufferGeometry) ) {
 
 		if ( geometry.index !== null ) {
 
@@ -77,10 +80,10 @@ THREE.WireframeGeometry = function ( geometry ) {
 
 			var indices = geometry.index.array;
 			var vertices = geometry.attributes.position;
-			var drawcalls = geometry.drawcalls;
+			var groups = geometry.groups;
 			var numEdges = 0;
 
-			if ( drawcalls.length === 0 ) {
+			if ( groups.length === 0 ) {
 
 				geometry.addGroup( 0, indices.length );
 
@@ -89,12 +92,12 @@ THREE.WireframeGeometry = function ( geometry ) {
 			// allocate maximal size
 			var edges = new Uint32Array( 2 * indices.length );
 
-			for ( var o = 0, ol = drawcalls.length; o < ol; ++ o ) {
+			for ( var o = 0, ol = groups.length; o < ol; ++ o ) {
 
-				var drawcall = drawcalls[ o ];
+				var group = groups[ o ];
 
-				var start = drawcall.start;
-				var count = drawcall.count;
+				var start = group.start;
+				var count = group.count;
 
 				for ( var i = start, il = start + count; i < il; i += 3 ) {
 
@@ -138,7 +141,7 @@ THREE.WireframeGeometry = function ( geometry ) {
 
 			}
 
-			this.addAttribute( 'position', new THREE.BufferAttribute( coords, 3 ) );
+			this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
 
 		} else {
 
@@ -170,13 +173,16 @@ THREE.WireframeGeometry = function ( geometry ) {
 
 			}
 
-			this.addAttribute( 'position', new THREE.BufferAttribute( coords, 3 ) );
+			this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
 
 		}
 
 	}
 
-};
+}
 
-THREE.WireframeGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
-THREE.WireframeGeometry.prototype.constructor = THREE.WireframeGeometry;
+WireframeGeometry.prototype = Object.create( BufferGeometry.prototype );
+WireframeGeometry.prototype.constructor = WireframeGeometry;
+
+
+export { WireframeGeometry };

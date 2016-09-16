@@ -1,3 +1,15 @@
+import { EventDispatcher } from './EventDispatcher';
+import { Face3 } from './Face3';
+import { Matrix3 } from '../math/Matrix3';
+import { Sphere } from '../math/Sphere';
+import { Box3 } from '../math/Box3';
+import { Vector3 } from '../math/Vector3';
+import { Matrix4 } from '../math/Matrix4';
+import { Vector2 } from '../math/Vector2';
+import { Color } from '../math/Color';
+import { Object3D } from './Object3D';
+import { _Math } from '../math/Math';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author kile / http://kile.stravaganza.org/
@@ -7,11 +19,11 @@
  * @author bhouston / http://clara.io
  */
 
-THREE.Geometry = function () {
+function Geometry() {
 
-	Object.defineProperty( this, 'id', { value: THREE.GeometryIdCount ++ } );
+	Object.defineProperty( this, 'id', { value: GeometryIdCount() } );
 
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = _Math.generateUUID();
 
 	this.name = '';
 	this.type = 'Geometry';
@@ -34,23 +46,23 @@ THREE.Geometry = function () {
 
 	// update flags
 
-	this.verticesNeedUpdate = false;
 	this.elementsNeedUpdate = false;
+	this.verticesNeedUpdate = false;
 	this.uvsNeedUpdate = false;
 	this.normalsNeedUpdate = false;
 	this.colorsNeedUpdate = false;
 	this.lineDistancesNeedUpdate = false;
 	this.groupsNeedUpdate = false;
 
-};
+}
 
-THREE.Geometry.prototype = {
+Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 
-	constructor: THREE.Geometry,
+	isGeometry: true,
 
 	applyMatrix: function ( matrix ) {
 
-		var normalMatrix = new THREE.Matrix3().getNormalMatrix( matrix );
+		var normalMatrix = new Matrix3().getNormalMatrix( matrix );
 
 		for ( var i = 0, il = this.vertices.length; i < il; i ++ ) {
 
@@ -87,6 +99,8 @@ THREE.Geometry.prototype = {
 		this.verticesNeedUpdate = true;
 		this.normalsNeedUpdate = true;
 
+		return this;
+
 	},
 
 	rotateX: function () {
@@ -97,7 +111,7 @@ THREE.Geometry.prototype = {
 
 		return function rotateX( angle ) {
 
-			if ( m1 === undefined ) m1 = new THREE.Matrix4();
+			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationX( angle );
 
@@ -117,7 +131,7 @@ THREE.Geometry.prototype = {
 
 		return function rotateY( angle ) {
 
-			if ( m1 === undefined ) m1 = new THREE.Matrix4();
+			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationY( angle );
 
@@ -137,7 +151,7 @@ THREE.Geometry.prototype = {
 
 		return function rotateZ( angle ) {
 
-			if ( m1 === undefined ) m1 = new THREE.Matrix4();
+			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationZ( angle );
 
@@ -157,7 +171,7 @@ THREE.Geometry.prototype = {
 
 		return function translate( x, y, z ) {
 
-			if ( m1 === undefined ) m1 = new THREE.Matrix4();
+			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeTranslation( x, y, z );
 
@@ -177,7 +191,7 @@ THREE.Geometry.prototype = {
 
 		return function scale( x, y, z ) {
 
-			if ( m1 === undefined ) m1 = new THREE.Matrix4();
+			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeScale( x, y, z );
 
@@ -195,7 +209,7 @@ THREE.Geometry.prototype = {
 
 		return function lookAt( vector ) {
 
-			if ( obj === undefined ) obj = new THREE.Object3D();
+			if ( obj === undefined ) obj = new Object3D();
 
 			obj.lookAt( vector );
 
@@ -214,7 +228,7 @@ THREE.Geometry.prototype = {
 		var indices = geometry.index !== null ? geometry.index.array : undefined;
 		var attributes = geometry.attributes;
 
-		var vertices = attributes.position.array;
+		var positions = attributes.position.array;
 		var normals = attributes.normal !== undefined ? attributes.normal.array : undefined;
 		var colors = attributes.color !== undefined ? attributes.color.array : undefined;
 		var uvs = attributes.uv !== undefined ? attributes.uv.array : undefined;
@@ -226,42 +240,42 @@ THREE.Geometry.prototype = {
 		var tempUVs = [];
 		var tempUVs2 = [];
 
-		for ( var i = 0, j = 0, k = 0; i < vertices.length; i += 3, j += 2, k += 4 ) {
+		for ( var i = 0, j = 0; i < positions.length; i += 3, j += 2 ) {
 
-			scope.vertices.push( new THREE.Vector3( vertices[ i ], vertices[ i + 1 ], vertices[ i + 2 ] ) );
+			scope.vertices.push( new Vector3( positions[ i ], positions[ i + 1 ], positions[ i + 2 ] ) );
 
 			if ( normals !== undefined ) {
 
-				tempNormals.push( new THREE.Vector3( normals[ i ], normals[ i + 1 ], normals[ i + 2 ] ) );
+				tempNormals.push( new Vector3( normals[ i ], normals[ i + 1 ], normals[ i + 2 ] ) );
 
 			}
 
 			if ( colors !== undefined ) {
 
-				scope.colors.push( new THREE.Color( colors[ i ], colors[ i + 1 ], colors[ i + 2 ] ) );
+				scope.colors.push( new Color( colors[ i ], colors[ i + 1 ], colors[ i + 2 ] ) );
 
 			}
 
 			if ( uvs !== undefined ) {
 
-				tempUVs.push( new THREE.Vector2( uvs[ j ], uvs[ j + 1 ] ) );
+				tempUVs.push( new Vector2( uvs[ j ], uvs[ j + 1 ] ) );
 
 			}
 
 			if ( uvs2 !== undefined ) {
 
-				tempUVs2.push( new THREE.Vector2( uvs2[ j ], uvs2[ j + 1 ] ) );
+				tempUVs2.push( new Vector2( uvs2[ j ], uvs2[ j + 1 ] ) );
 
 			}
 
 		}
 
-		function addFace( a, b, c ) {
+		function addFace( a, b, c, materialIndex ) {
 
 			var vertexNormals = normals !== undefined ? [ tempNormals[ a ].clone(), tempNormals[ b ].clone(), tempNormals[ c ].clone() ] : [];
 			var vertexColors = colors !== undefined ? [ scope.colors[ a ].clone(), scope.colors[ b ].clone(), scope.colors[ c ].clone() ] : [];
 
-			var face = new THREE.Face3( a, b, c, vertexNormals, vertexColors );
+			var face = new Face3( a, b, c, vertexNormals, vertexColors, materialIndex );
 
 			scope.faces.push( face );
 
@@ -277,7 +291,7 @@ THREE.Geometry.prototype = {
 
 			}
 
-		};
+		}
 
 		if ( indices !== undefined ) {
 
@@ -294,7 +308,7 @@ THREE.Geometry.prototype = {
 
 					for ( var j = start, jl = start + count; j < jl; j += 3 ) {
 
-						addFace( indices[ j ], indices[ j + 1 ], indices[ j + 2 ] );
+						addFace( indices[ j ], indices[ j + 1 ], indices[ j + 2 ], group.materialIndex  );
 
 					}
 
@@ -312,7 +326,7 @@ THREE.Geometry.prototype = {
 
 		} else {
 
-			for ( var i = 0; i < vertices.length / 3; i += 3 ) {
+			for ( var i = 0; i < positions.length / 3; i += 3 ) {
 
 				addFace( i, i + 1, i + 2 );
 
@@ -359,7 +373,7 @@ THREE.Geometry.prototype = {
 
 		var s = radius === 0 ? 1 : 1.0 / radius;
 
-		var matrix = new THREE.Matrix4();
+		var matrix = new Matrix4();
 		matrix.set(
 			s, 0, 0, - s * center.x,
 			0, s, 0, - s * center.y,
@@ -375,7 +389,7 @@ THREE.Geometry.prototype = {
 
 	computeFaceNormals: function () {
 
-		var cb = new THREE.Vector3(), ab = new THREE.Vector3();
+		var cb = new Vector3(), ab = new Vector3();
 
 		for ( var f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
@@ -399,13 +413,15 @@ THREE.Geometry.prototype = {
 
 	computeVertexNormals: function ( areaWeighted ) {
 
+		if ( areaWeighted === undefined ) areaWeighted = true;
+
 		var v, vl, f, fl, face, vertices;
 
 		vertices = new Array( this.vertices.length );
 
 		for ( v = 0, vl = this.vertices.length; v < vl; v ++ ) {
 
-			vertices[ v ] = new THREE.Vector3();
+			vertices[ v ] = new Vector3();
 
 		}
 
@@ -415,7 +431,7 @@ THREE.Geometry.prototype = {
 			// http://www.iquilezles.org/www/articles/normals/normals.htm
 
 			var vA, vB, vC;
-			var cb = new THREE.Vector3(), ab = new THREE.Vector3();
+			var cb = new Vector3(), ab = new Vector3();
 
 			for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
@@ -477,6 +493,12 @@ THREE.Geometry.prototype = {
 
 		}
 
+		if ( this.faces.length > 0 ) {
+
+			this.normalsNeedUpdate = true;
+
+		}
+
 	},
 
 	computeMorphNormals: function () {
@@ -521,7 +543,7 @@ THREE.Geometry.prototype = {
 
 		// use temp geometry to compute face and vertex normals for each morph
 
-		var tmpGeo = new THREE.Geometry();
+		var tmpGeo = new Geometry();
 		tmpGeo.faces = this.faces;
 
 		for ( i = 0, il = this.morphTargets.length; i < il; i ++ ) {
@@ -541,8 +563,8 @@ THREE.Geometry.prototype = {
 
 				for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
-					faceNormal = new THREE.Vector3();
-					vertexNormals = { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3() };
+					faceNormal = new Vector3();
+					vertexNormals = { a: new Vector3(), b: new Vector3(), c: new Vector3() };
 
 					dstNormalsFace.push( faceNormal );
 					dstNormalsVertex.push( vertexNormals );
@@ -625,7 +647,7 @@ THREE.Geometry.prototype = {
 
 		if ( this.boundingBox === null ) {
 
-			this.boundingBox = new THREE.Box3();
+			this.boundingBox = new Box3();
 
 		}
 
@@ -637,7 +659,7 @@ THREE.Geometry.prototype = {
 
 		if ( this.boundingSphere === null ) {
 
-			this.boundingSphere = new THREE.Sphere();
+			this.boundingSphere = new Sphere();
 
 		}
 
@@ -647,7 +669,7 @@ THREE.Geometry.prototype = {
 
 	merge: function ( geometry, matrix, materialIndexOffset ) {
 
-		if ( geometry instanceof THREE.Geometry === false ) {
+		if ( (geometry && geometry.isGeometry) === false ) {
 
 			console.error( 'THREE.Geometry.merge(): geometry not an instance of THREE.Geometry.', geometry );
 			return;
@@ -667,7 +689,7 @@ THREE.Geometry.prototype = {
 
 		if ( matrix !== undefined ) {
 
-			normalMatrix = new THREE.Matrix3().getNormalMatrix( matrix );
+			normalMatrix = new Matrix3().getNormalMatrix( matrix );
 
 		}
 
@@ -693,7 +715,7 @@ THREE.Geometry.prototype = {
 			faceVertexNormals = face.vertexNormals,
 			faceVertexColors = face.vertexColors;
 
-			faceCopy = new THREE.Face3( face.a + vertexOffset, face.b + vertexOffset, face.c + vertexOffset );
+			faceCopy = new Face3( face.a + vertexOffset, face.b + vertexOffset, face.c + vertexOffset );
 			faceCopy.normal.copy( face.normal );
 
 			if ( normalMatrix !== undefined ) {
@@ -757,7 +779,7 @@ THREE.Geometry.prototype = {
 
 	mergeMesh: function ( mesh ) {
 
-		if ( mesh instanceof THREE.Mesh === false ) {
+		if ( (mesh && mesh.isMesh) === false ) {
 
 			console.error( 'THREE.Geometry.mergeMesh(): mesh not an instance of THREE.Mesh.', mesh );
 			return;
@@ -960,7 +982,7 @@ THREE.Geometry.prototype = {
 
 			var face = this.faces[ i ];
 
-			var hasMaterial = false; // face.materialIndex !== undefined;
+			var hasMaterial = true;
 			var hasFaceUv = false; // deprecated
 			var hasFaceVertexUv = this.faceVertexUvs[ 0 ][ i ] !== undefined;
 			var hasFaceNormal = face.normal.length() > 0;
@@ -970,7 +992,7 @@ THREE.Geometry.prototype = {
 
 			var faceType = 0;
 
-			faceType = setBit( faceType, 0, 0 );
+			faceType = setBit( faceType, 0, 0 ); // isQuad
 			faceType = setBit( faceType, 1, hasMaterial );
 			faceType = setBit( faceType, 2, hasFaceUv );
 			faceType = setBit( faceType, 3, hasFaceVertexUv );
@@ -981,6 +1003,7 @@ THREE.Geometry.prototype = {
 
 			faces.push( faceType );
 			faces.push( face.a, face.b, face.c );
+			faces.push( face.materialIndex );
 
 			if ( hasFaceVertexUv ) {
 
@@ -1103,7 +1126,31 @@ THREE.Geometry.prototype = {
 
 	clone: function () {
 
+		/*
+		// Handle primitives
+
+		var parameters = this.parameters;
+
+		if ( parameters !== undefined ) {
+
+			var values = [];
+
+			for ( var key in parameters ) {
+
+				values.push( parameters[ key ] );
+
+			}
+
+			var geometry = Object.create( this.constructor.prototype );
+			this.constructor.apply( geometry, values );
+			return geometry;
+
+		}
+
 		return new this.constructor().copy( this );
+		*/
+
+		return new Geometry().copy( this );
 
 	},
 
@@ -1167,8 +1214,10 @@ THREE.Geometry.prototype = {
 
 	}
 
-};
+} );
 
-THREE.EventDispatcher.prototype.apply( THREE.Geometry.prototype );
+var count = 0;
+function GeometryIdCount() { return count++; };
 
-THREE.GeometryIdCount = 0;
+
+export { GeometryIdCount, Geometry };

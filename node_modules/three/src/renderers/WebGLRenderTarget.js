@@ -1,193 +1,47 @@
+import { EventDispatcher } from '../core/EventDispatcher';
+import { Texture } from '../textures/Texture';
+import { LinearFilter } from '../constants';
+import { Vector4 } from '../math/Vector4';
+import { _Math } from '../math/Math';
+
 /**
  * @author szimek / https://github.com/szimek/
  * @author alteredq / http://alteredqualia.com/
+ * @author Marius Kintel / https://github.com/kintel
  */
 
-THREE.WebGLRenderTarget = function ( width, height, options ) {
+/*
+ In options, we can specify:
+ * Texture parameters for an auto-generated target texture
+ * depthBuffer/stencilBuffer: Booleans to indicate if we should generate these buffers
+*/
+function WebGLRenderTarget( width, height, options ) {
 
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = _Math.generateUUID();
 
 	this.width = width;
 	this.height = height;
 
+	this.scissor = new Vector4( 0, 0, width, height );
+	this.scissorTest = false;
+
+	this.viewport = new Vector4( 0, 0, width, height );
+
 	options = options || {};
 
-	if ( options.minFilter === undefined ) options.minFilter = THREE.LinearFilter;
+	if ( options.minFilter === undefined ) options.minFilter = LinearFilter;
 
-	this.texture = new THREE.Texture( undefined, undefined, options.wrapS, options.wrapT, options.magFilter, options.minFilter, options.format, options.type, options.anisotropy );
+	this.texture = new Texture( undefined, undefined, options.wrapS, options.wrapT, options.magFilter, options.minFilter, options.format, options.type, options.anisotropy, options.encoding );
 
 	this.depthBuffer = options.depthBuffer !== undefined ? options.depthBuffer : true;
 	this.stencilBuffer = options.stencilBuffer !== undefined ? options.stencilBuffer : true;
+	this.depthTexture = options.depthTexture !== undefined ? options.depthTexture : null;
 
-	this.shareDepthFrom = options.shareDepthFrom !== undefined ? options.shareDepthFrom : null;
+}
 
-};
+Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
 
-THREE.WebGLRenderTarget.prototype = {
-
-	constructor: THREE.WebGLRenderTarget,
-
-	get wrapS() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .wrapS is now .texture.wrapS.' );
-
-		return this.texture.wrapS;
-
-	},
-
-	set wrapS( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .wrapS is now .texture.wrapS.' );
-
-		this.texture.wrapS = value;
-
-	},
-
-	get wrapT() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .wrapT is now .texture.wrapT.' );
-
-		return this.texture.wrapT;
-
-	},
-
-	set wrapT( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .wrapT is now .texture.wrapT.' );
-
-		this.texture.wrapT = value;
-
-	},
-
-	get magFilter() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .magFilter is now .texture.magFilter.' );
-
-		return this.texture.magFilter;
-
-	},
-
-	set magFilter( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .magFilter is now .texture.magFilter.' );
-
-		this.texture.magFilter = value;
-
-	},
-
-	get minFilter() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .minFilter is now .texture.minFilter.' );
-
-		return this.texture.minFilter;
-
-	},
-
-	set minFilter( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .minFilter is now .texture.minFilter.' );
-
-		this.texture.minFilter = value;
-
-	},
-
-	get anisotropy() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .anisotropy is now .texture.anisotropy.' );
-
-		return this.texture.anisotropy;
-
-	},
-
-	set anisotropy( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .anisotropy is now .texture.anisotropy.' );
-
-		this.texture.anisotropy = value;
-
-	},
-
-	get offset() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .offset is now .texture.offset.' );
-
-		return this.texture.offset;
-
-	},
-
-	set offset( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .offset is now .texture.offset.' );
-
-		this.texture.offset = value;
-
-	},
-
-	get repeat() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .repeat is now .texture.repeat.' );
-
-		return this.texture.repeat;
-
-	},
-
-	set repeat( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .repeat is now .texture.repeat.' );
-
-		this.texture.repeat = value;
-
-	},
-
-	get format() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .format is now .texture.format.' );
-
-		return this.texture.format;
-
-	},
-
-	set format( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .format is now .texture.format.' );
-
-		this.texture.format = value;
-
-	},
-
-	get type() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .type is now .texture.type.' );
-
-		return this.texture.type;
-
-	},
-
-	set type( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .type is now .texture.type.' );
-
-		this.texture.type = value;
-
-	},
-
-	get generateMipmaps() {
-
-		console.warn( 'THREE.WebGLRenderTarget: .generateMipmaps is now .texture.generateMipmaps.' );
-
-		return this.texture.generateMipmaps;
-
-	},
-
-	set generateMipmaps( value ) {
-
-		console.warn( 'THREE.WebGLRenderTarget: .generateMipmaps is now .texture.generateMipmaps.' );
-
-		this.texture.generateMipmaps = value;
-
-	},
-
-	//
+	isWebGLRenderTarget: true,
 
 	setSize: function ( width, height ) {
 
@@ -199,6 +53,9 @@ THREE.WebGLRenderTarget.prototype = {
 			this.dispose();
 
 		}
+
+		this.viewport.set( 0, 0, width, height );
+		this.scissor.set( 0, 0, width, height );
 
 	},
 
@@ -213,12 +70,13 @@ THREE.WebGLRenderTarget.prototype = {
 		this.width = source.width;
 		this.height = source.height;
 
+		this.viewport.copy( source.viewport );
+
 		this.texture = source.texture.clone();
 
 		this.depthBuffer = source.depthBuffer;
 		this.stencilBuffer = source.stencilBuffer;
-
-		this.shareDepthFrom = source.shareDepthFrom;
+		this.depthTexture = source.depthTexture;
 
 		return this;
 
@@ -230,6 +88,7 @@ THREE.WebGLRenderTarget.prototype = {
 
 	}
 
-};
+} );
 
-THREE.EventDispatcher.prototype.apply( THREE.WebGLRenderTarget.prototype );
+
+export { WebGLRenderTarget };

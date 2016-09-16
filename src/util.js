@@ -125,4 +125,64 @@ Util.isIE11 = function() {
   return navigator.userAgent.match(/Trident/);
 };
 
+Util.getRectCenter = function(rect) {
+  return new THREE.Vector2(rect.x + rect.width/2, rect.y + rect.height/2);
+};
+
+Util.getScreenWidth = function() {
+  return Math.max(window.screen.width, window.screen.height) *
+      window.devicePixelRatio;
+};
+
+Util.getScreenHeight = function() {
+  return Math.min(window.screen.width, window.screen.height) *
+      window.devicePixelRatio;
+};
+
+Util.isIOS9OrLess = function() {
+  if (!Util.isIOS()) {
+    return false;
+  }
+  var re = /(iPhone|iPad|iPod) OS ([\d_]+)/;
+  var iOSVersion = navigator.userAgent.match(re);
+  if (!iOSVersion) {
+    return false;
+  }
+  // Get the last group.
+  var versionString = iOSVersion[iOSVersion.length - 1];
+  var majorVersion = parseFloat(versionString);
+  return majorVersion <= 9;
+};
+
+Util.getExtension = function(url) {
+  return url.split('.').pop();
+};
+
+Util.createGetParams = function(params) {
+  var out = '?';
+  for (var k in params) {
+    var paramString = k + '=' + params[k] + '&';
+    out += paramString;
+  }
+  // Remove the trailing ampersand.
+  out.substring(0, params.length - 2);
+  return out;
+};
+
+Util.sendParentMessage = function(message) {
+  if (window.parent) {
+    parent.postMessage(message, '*');
+  }
+};
+
+Util.parseBoolean = function(value) {
+  if (value == 'false' || value == 0) {
+    return false;
+  } else if (value == 'true' || value == 1) {
+    return true;
+  } else {
+    return !!value;
+  }
+};
+
 module.exports = Util;

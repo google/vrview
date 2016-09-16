@@ -4,7 +4,7 @@
  *
  * Some common of Curve methods
  * .getPoint(t), getTangent(t)
- * .getPointAt(u), getTagentAt(u)
+ * .getPointAt(u), getTangentAt(u)
  * .getPoints(), .getSpacedPoints()
  * .getLength()
  * .updateArcLengths()
@@ -24,7 +24,6 @@
  * THREE.QuadraticBezierCurve3
  * THREE.CubicBezierCurve3
  * THREE.SplineCurve3
- * THREE.ClosedSplineCurve3
  *
  * A series of curves can be represented as a THREE.CurvePath
  *
@@ -34,13 +33,11 @@
  *	Abstract Curve base class
  **************************************************************/
 
-THREE.Curve = function () {
+function Curve() {}
 
-};
+Curve.prototype = {
 
-THREE.Curve.prototype = {
-
-	constructor: THREE.Curve,
+	constructor: Curve,
 
 	// Virtual base class method to overwrite and implement in subclasses
 	//	- t [0 .. 1]
@@ -68,15 +65,15 @@ THREE.Curve.prototype = {
 
 		if ( ! divisions ) divisions = 5;
 
-		var d, pts = [];
+		var points = [];
 
-		for ( d = 0; d <= divisions; d ++ ) {
+		for ( var d = 0; d <= divisions; d ++ ) {
 
-			pts.push( this.getPoint( d / divisions ) );
+			points.push( this.getPoint( d / divisions ) );
 
 		}
 
-		return pts;
+		return points;
 
 	},
 
@@ -86,15 +83,15 @@ THREE.Curve.prototype = {
 
 		if ( ! divisions ) divisions = 5;
 
-		var d, pts = [];
+		var points = [];
 
-		for ( d = 0; d <= divisions; d ++ ) {
+		for ( var d = 0; d <= divisions; d ++ ) {
 
-			pts.push( this.getPointAt( d / divisions ) );
+			points.push( this.getPointAt( d / divisions ) );
 
 		}
 
-		return pts;
+		return points;
 
 	},
 
@@ -264,9 +261,7 @@ THREE.Curve.prototype = {
 
 	}
 
-}
-
-THREE.Curve.Utils = THREE.CurveUtils; // backwards compatibility
+};
 
 // TODO: Transformation for Curves?
 
@@ -276,12 +271,15 @@ THREE.Curve.Utils = THREE.CurveUtils; // backwards compatibility
 
 // A Factory method for creating new curve subclasses
 
-THREE.Curve.create = function ( constructor, getPointFunc ) {
+Curve.create = function ( constructor, getPointFunc ) {
 
-	constructor.prototype = Object.create( THREE.Curve.prototype );
+	constructor.prototype = Object.create( Curve.prototype );
 	constructor.prototype.constructor = constructor;
 	constructor.prototype.getPoint = getPointFunc;
 
 	return constructor;
 
 };
+
+
+export { Curve };

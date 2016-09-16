@@ -1,63 +1,38 @@
+import { InterpolateDiscrete } from '../../constants';
+import { KeyframeTrackPrototype } from '../KeyframeTrackPrototype';
+import { KeyframeTrackConstructor } from '../KeyframeTrackConstructor';
+
 /**
  *
  * A Track that interpolates Strings
  *
+ *
  * @author Ben Houston / http://clara.io/
  * @author David Sarno / http://lighthaus.us/
+ * @author tschw
  */
 
-THREE.StringKeyframeTrack = function ( name, keys ) {
+function StringKeyframeTrack( name, times, values, interpolation ) {
 
-	THREE.KeyframeTrack.call( this, name, keys );
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
 
-	// local cache of value type to avoid allocations during runtime.
-	this.result = this.keys[0].value;
+}
 
-};
+StringKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
 
-THREE.StringKeyframeTrack.prototype = Object.create( THREE.KeyframeTrack.prototype );
+	constructor: StringKeyframeTrack,
 
-THREE.StringKeyframeTrack.prototype.constructor = THREE.StringKeyframeTrack;
+	ValueTypeName: 'string',
+	ValueBufferType: Array,
 
-THREE.StringKeyframeTrack.prototype.setResult = function( value ) {
+	DefaultInterpolation: InterpolateDiscrete,
 
-	this.result = value;
+	InterpolantFactoryMethodLinear: undefined,
 
-};
+	InterpolantFactoryMethodSmooth: undefined
 
-// memoization of the lerp function for speed.
-// NOTE: Do not optimize as a prototype initialization closure, as value0 will be different on a per class basis.
-THREE.StringKeyframeTrack.prototype.lerpValues = function( value0, value1, alpha ) {
+} );
 
-	return ( alpha < 1.0 ) ? value0 : value1;
 
-};
-
-THREE.StringKeyframeTrack.prototype.compareValues = function( value0, value1 ) {
-
-	return ( value0 === value1 );
-
-};
-
-THREE.StringKeyframeTrack.prototype.clone = function() {
-
-	var clonedKeys = [];
-
-	for ( var i = 0; i < this.keys.length; i ++ ) {
-
-		var key = this.keys[i];
-		clonedKeys.push( {
-			time: key.time,
-			value: key.value
-		} );
-	}
-
-	return new THREE.StringKeyframeTrack( this.name, clonedKeys );
-
-};
-
-THREE.StringKeyframeTrack.parse = function( json ) {
-
-	return new THREE.StringKeyframeTrack( json.name, json.keys );
-
-};
+export { StringKeyframeTrack };

@@ -1,12 +1,18 @@
+import { Geometry } from './Geometry';
+import { EventDispatcher } from './EventDispatcher';
+import { Vector2 } from '../math/Vector2';
+import { _Math } from '../math/Math';
+import { GeometryIdCount } from './Geometry';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-THREE.DirectGeometry = function () {
+function DirectGeometry() {
 
-	Object.defineProperty( this, 'id', { value: THREE.GeometryIdCount ++ } );
+	Object.defineProperty( this, 'id', { value: GeometryIdCount() } );
 
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = _Math.generateUUID();
 
 	this.name = '';
 	this.type = 'DirectGeometry';
@@ -38,14 +44,12 @@ THREE.DirectGeometry = function () {
 	this.uvsNeedUpdate = false;
 	this.groupsNeedUpdate = false;
 
-};
+}
 
-THREE.DirectGeometry.prototype = {
+Object.assign( DirectGeometry.prototype, EventDispatcher.prototype, {
 
-	constructor: THREE.DirectGeometry,
-
-	computeBoundingBox: THREE.Geometry.prototype.computeBoundingBox,
-	computeBoundingSphere: THREE.Geometry.prototype.computeBoundingSphere,
+	computeBoundingBox: Geometry.prototype.computeBoundingBox,
+	computeBoundingSphere: Geometry.prototype.computeBoundingSphere,
 
 	computeFaceNormals: function () {
 
@@ -118,9 +122,11 @@ THREE.DirectGeometry.prototype = {
 		var morphTargets = geometry.morphTargets;
 		var morphTargetsLength = morphTargets.length;
 
+		var morphTargetsPosition;
+
 		if ( morphTargetsLength > 0 ) {
 
-			var morphTargetsPosition = [];
+			morphTargetsPosition = [];
 
 			for ( var i = 0; i < morphTargetsLength; i ++ ) {
 
@@ -135,9 +141,11 @@ THREE.DirectGeometry.prototype = {
 		var morphNormals = geometry.morphNormals;
 		var morphNormalsLength = morphNormals.length;
 
+		var morphTargetsNormal;
+
 		if ( morphNormalsLength > 0 ) {
 
-			var morphTargetsNormal = [];
+			morphTargetsNormal = [];
 
 			for ( var i = 0; i < morphNormalsLength; i ++ ) {
 
@@ -205,7 +213,7 @@ THREE.DirectGeometry.prototype = {
 
 					console.warn( 'THREE.DirectGeometry.fromGeometry(): Undefined vertexUv ', i );
 
-					this.uvs.push( new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2() );
+					this.uvs.push( new Vector2(), new Vector2(), new Vector2() );
 
 				}
 
@@ -223,7 +231,7 @@ THREE.DirectGeometry.prototype = {
 
 					console.warn( 'THREE.DirectGeometry.fromGeometry(): Undefined vertexUv2 ', i );
 
-					this.uvs2.push( new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2() );
+					this.uvs2.push( new Vector2(), new Vector2(), new Vector2() );
 
 				}
 
@@ -281,6 +289,7 @@ THREE.DirectGeometry.prototype = {
 
 	}
 
-};
+} );
 
-THREE.EventDispatcher.prototype.apply( THREE.DirectGeometry.prototype );
+
+export { DirectGeometry };

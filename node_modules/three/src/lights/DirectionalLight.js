@@ -1,37 +1,46 @@
+import { Light } from './Light';
+import { DirectionalLightShadow } from './DirectionalLightShadow';
+import { Object3D } from '../core/Object3D';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author alteredq / http://alteredqualia.com/
  */
 
-THREE.DirectionalLight = function ( color, intensity ) {
+function DirectionalLight( color, intensity ) {
 
-	THREE.Light.call( this, color );
+	Light.call( this, color, intensity );
 
 	this.type = 'DirectionalLight';
 
-	this.position.set( 0, 1, 0 );
+	this.position.copy( Object3D.DefaultUp );
 	this.updateMatrix();
 
-	this.target = new THREE.Object3D();
+	this.target = new Object3D();
 
-	this.intensity = ( intensity !== undefined ) ? intensity : 1;
+	this.shadow = new DirectionalLightShadow();
 
-	this.shadow = new THREE.LightShadow( new THREE.OrthographicCamera( - 500, 500, 500, - 500, 50, 5000 ) );
+}
 
-};
+DirectionalLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
-THREE.DirectionalLight.prototype = Object.create( THREE.Light.prototype );
-THREE.DirectionalLight.prototype.constructor = THREE.DirectionalLight;
+	constructor: DirectionalLight,
 
-THREE.DirectionalLight.prototype.copy = function ( source ) {
+	isDirectionalLight: true,
 
-	THREE.Light.prototype.copy.call( this, source );
+	copy: function ( source ) {
 
-	this.intensity = source.intensity;
-	this.target = source.target.clone();
+		Light.prototype.copy.call( this, source );
 
-	this.shadow = source.shadow.clone();
+		this.target = source.target.clone();
 
-	return this;
+		this.shadow = source.shadow.clone();
 
-};
+		return this;
+
+	}
+
+} );
+
+
+export { DirectionalLight };

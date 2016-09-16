@@ -42,19 +42,12 @@ THREE.STLLoader.prototype = {
 		var scope = this;
 
 		var loader = new THREE.XHRLoader( scope.manager );
-		loader.setCrossOrigin( this.crossOrigin );
 		loader.setResponseType( 'arraybuffer' );
 		loader.load( url, function ( text ) {
 
 			onLoad( scope.parse( text ) );
 
 		}, onProgress, onError );
-
-	},
-
-	setCrossOrigin: function ( value ) {
-
-		this.crossOrigin = value;
 
 	},
 
@@ -251,13 +244,13 @@ THREE.STLLoader.prototype = {
 		if ( typeof buf !== "string" ) {
 
 			var array_buffer = new Uint8Array( buf );
-			var str = '';
+			var strArray = [];
 			for ( var i = 0; i < buf.byteLength; i ++ ) {
 
-				str += String.fromCharCode( array_buffer[ i ] ); // implicitly assumes little-endian
+				strArray.push(String.fromCharCode( array_buffer[ i ] )); // implicitly assumes little-endian
 
 			}
-			return str;
+			return strArray.join('');
 
 		} else {
 

@@ -1,34 +1,37 @@
+import { Cache } from './Cache';
+import { DefaultLoadingManager } from './LoadingManager';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-THREE.XHRLoader = function ( manager ) {
+function XHRLoader( manager ) {
 
-	this.manager = ( manager !== undefined ) ? manager : THREE.DefaultLoadingManager;
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
 
-};
+}
 
-THREE.XHRLoader.prototype = {
-
-	constructor: THREE.XHRLoader,
+Object.assign( XHRLoader.prototype, {
 
 	load: function ( url, onLoad, onProgress, onError ) {
 
+		if ( this.path !== undefined ) url = this.path + url;
+
 		var scope = this;
 
-		var cached = THREE.Cache.get( url );
+		var cached = Cache.get( url );
 
 		if ( cached !== undefined ) {
 
-			if ( onLoad ) {
+			scope.manager.itemStart( url );
 
-				setTimeout( function () {
+			setTimeout( function () {
 
-					onLoad( cached );
+				if ( onLoad ) onLoad( cached );
 
-				}, 0 );
+				scope.manager.itemEnd( url );
 
-			}
+			}, 0 );
 
 			return cached;
 
@@ -41,11 +44,32 @@ THREE.XHRLoader.prototype = {
 
 			var response = event.target.response;
 
-			THREE.Cache.add( url, response );
+			Cache.add( url, response );
 
-			if ( onLoad ) onLoad( response );
+			if ( this.status === 200 ) {
 
-			scope.manager.itemEnd( url );
+				if ( onLoad ) onLoad( response );
+
+				scope.manager.itemEnd( url );
+
+			} else if ( this.status === 0 ) {
+
+				// Some browsers return HTTP Status 0 when using non-http protocol
+				// e.g. 'file://' or 'data://'. Handle as success.
+
+				console.warn( 'THREE.XHRLoader: HTTP Status 0 received.' );
+
+				if ( onLoad ) onLoad( response );
+
+				scope.manager.itemEnd( url );
+
+			} else {
+
+				if ( onError ) onError( event );
+
+				scope.manager.itemError( url );
+
+			}
 
 		}, false );
 
@@ -67,9 +91,10 @@ THREE.XHRLoader.prototype = {
 
 		}, false );
 
-		if ( this.crossOrigin !== undefined ) request.crossOrigin = this.crossOrigin;
 		if ( this.responseType !== undefined ) request.responseType = this.responseType;
 		if ( this.withCredentials !== undefined ) request.withCredentials = this.withCredentials;
+
+		if ( request.overrideMimeType ) request.overrideMimeType( 'text/plain' );
 
 		request.send( null );
 
@@ -79,22 +104,28 @@ THREE.XHRLoader.prototype = {
 
 	},
 
-	setResponseType: function ( value ) {
+	setPath: function ( value ) {
 
-		this.responseType = value;
+		this.path = value;
+		return this;
 
 	},
 
-	setCrossOrigin: function ( value ) {
+	setResponseType: function ( value ) {
 
-		this.crossOrigin = value;
+		this.responseType = value;
+		return this;
 
 	},
 
 	setWithCredentials: function ( value ) {
 
 		this.withCredentials = value;
+		return this;
 
 	}
 
-};
+} );
+
+
+export { XHRLoader };
