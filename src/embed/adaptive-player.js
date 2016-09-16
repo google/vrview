@@ -23,41 +23,39 @@ AdaptivePlayer.prototype = new EventEmitter();
 
 AdaptivePlayer.prototype.load = function(url) {
   this.initShaka_().then(function () {
-
-  })
-
-  var self = this;
-  // TODO(smus): Investigate whether or not differentiation is best done by
-  // mimeType after all. Cursory research suggests that adaptive streaming
-  // manifest mime types aren't properly supported.
-  //
-  // For now, make determination based on extension.
-  var extension = Util.getExtension(url);
-  switch (extension) {
-    case 'm3u8': // HLS
-      this.type = Types.HLS;
-      if (Util.isIOS()) {
+    var self = this;
+    // TODO(smus): Investigate whether or not differentiation is best done by
+    // mimeType after all. Cursory research suggests that adaptive streaming
+    // manifest mime types aren't properly supported.
+    //
+    // For now, make determination based on extension.
+    var extension = Util.getExtension(url);
+    switch (extension) {
+      case 'm3u8': // HLS
+        this.type = Types.HLS;
+        if (Util.isIOS()) {
+          this.loadVideo_(url).then(function() {
+            self.emit('load', self.video);
+          }).catch(this.onError_.bind(this));
+        } else {
+          self.onError_('HLS is only supported on iOS.');
+        }
+        break;
+      case 'mpd': // MPEG-DASH
+        this.type = Types.DASH;
+        this.player.load(url).then(function() {
+          console.log('The video has now been loaded!');
+          self.emit('load', self.video);
+        }).catch(this.onError_.bind(this));
+        break;
+      default: // A regular video, not an adaptive manifest.
+        this.type = Types.VIDEO;
         this.loadVideo_(url).then(function() {
           self.emit('load', self.video);
         }).catch(this.onError_.bind(this));
-      } else {
-        self.onError_('HLS is only supported on iOS.');
-      }
-      break;
-    case 'mpd': // MPEG-DASH
-      this.type = Types.DASH;
-      this.player.load(url).then(function() {
-        console.log('The video has now been loaded!');
-        self.emit('load', self.video);
-      }).catch(this.onError_.bind(this));
-      break;
-    default: // A regular video, not an adaptive manifest.
-      this.type = Types.VIDEO;
-      this.loadVideo_(url).then(function() {
-        self.emit('load', self.video);
-      }).catch(this.onError_.bind(this));
-      break;
-  }
+        break;
+    }
+  });
 };
 
 AdaptivePlayer.prototype.destroy = function() {
