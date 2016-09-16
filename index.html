@@ -39,15 +39,8 @@ WebVRConfig = {
           script.async = false;
           document.head.appendChild(script);
 
-          if (options.returnPromise) {
-            return new Promise(function(resolve, reject) {
-              script.onload = resolve;
-              script.onerror = reject;
-            });
-          }
-
-          script.onload = options.callbackSuccess;
-          script.onerror = options.callbackError;
+          script.onload = options && options.callbackSuccess;
+          script.onerror = options && options.callbackError;
         }
 
         function loadPageScripts () {
@@ -67,7 +60,7 @@ WebVRConfig = {
           // Load each file. Since async is false, these will be
           // executed in order.
           for (var i = 0; i < files.length; i++) {
-            loadScript(files[i], {returnPromise: true});
+            loadScript(files[i]);
           }
         }
 
