@@ -73,7 +73,9 @@ WebVRConfig = {
 
         if (!'Promise' in window) {
           return loadScript('node_modules/es6-promise/es6-promise.min.js',
-            loadPageScripts);
+            loadPageScripts, function(err) {
+              console.error(err);
+            });
         }
 
         loadPageScripts();
