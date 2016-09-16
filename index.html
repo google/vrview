@@ -66,6 +66,8 @@ WebVRConfig = {
           }
         }
 
+        // If Promises aren't supported make sure that's loaded before the other
+        // scripts, and defer the other scripts.
         if (!'Promise' in window) {
           return loadScript('node_modules/es6-promise/es6-promise.min.js',
             loadPageScripts, function(err) {
@@ -73,6 +75,7 @@ WebVRConfig = {
             });
         }
 
+        // Otherwise just load the scripts, because Promises are supported.
         loadPageScripts();
       })();
     </script>
