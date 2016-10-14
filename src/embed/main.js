@@ -49,6 +49,14 @@ worldRenderer.hotspotRenderer.on('click', onHotspotClick);
 
 window.worldRenderer = worldRenderer;
 
+// Omnitone.
+// TODO(hoch): refactor these globals.
+var Omnitone = 
+  require('../../node_modules/omnitone/build/omnitone.min.js').Omnitone;
+var audioContext = null;
+var omnitoneDecoder = null;
+var omnitoneRotationMatrix = new THREE.Matrix4();
+
 var isReadySent = false;
 
 function onLoad() {
@@ -79,19 +87,39 @@ function onVideoTap() {
   worldRenderer.videoProxy.play();
   hidePlayButton();
 
+  // TODO(hoch): refactor this.
+  omnitoneDecoder.initialize().then(function () {
+    console.log('initialized');
+    videoElement.play();
+  }, function (error) {
+    console.log(error);
+  });
+
   // Prevent multiple play() calls on the video element.
   document.body.removeEventListener('touchend', onVideoTap);
 }
 
 function onRenderLoad(event) {
   if (event.videoElement) {
+
+    // TODO: activate this only when it's in the 'spatial' audio mode.
+    audioContext = new AudioContext();
+    omnitoneDecoder = Omnitone.createFOADecoder(
+        audioContext, event.videoElement, { postGainDB: 10 });
+
     // On mobile, tell the user they need to tap to start. Otherwise, autoplay.
     if (Util.isMobile()) {
       // Tell user to tap to start.
       showPlayButton();
       document.body.addEventListener('touchend', onVideoTap);
     } else {
-      event.videoElement.play();
+      // TODO(honch): refactor this.
+      omnitoneDecoder.initialize().then(function () {
+        console.log('initialized');
+        event.videoElement.play();
+      }, function (error) {
+        console.log(error);
+      });
     }
 
     // Attach to pause and play events, to notify the API.
@@ -265,6 +293,19 @@ function loop(time) {
     worldRenderer.videoProxy.update(time);
   }
   worldRenderer.render(time);
+  
+  // Update omnitone decoder's rotation matrix.
+  // TODO(hoch): refactor this.
+  if (omnitoneDecoder) {
+    omnitoneRotationMatrix.getInverse(worldRenderer.camera.matrix);
+    var c = omnitoneRotationMatrix.elements;
+    omnitoneDecoder.setRotationMatrix([
+        c[0], c[1], c[2],
+        c[4], c[5], c[6],
+        c[8], c[9], c[10]
+      ]);
+  }
+  
   stats.end();
   requestAnimationFrame(loop);
 }

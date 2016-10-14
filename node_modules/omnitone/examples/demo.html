@@ -1,0 +1,105 @@
+<!--
+  Copyright 2016 Google Inc. All Rights Reserved.
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>A Simple Demo: Omnitone</title>
+  <script src="../build/omnitone.min.js"></script>
+  <style>
+    h2 {
+      font-family: sans-serif; 
+    }
+
+    button {
+      width: 120px;
+      height: 24px;
+      font-weight: bold;
+    }
+
+    select {
+      width: 120px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Select the sound source to play.</h2>
+  <h2>Use headphones for the full-sphere surround sound.</h2>
+  <br>
+  <select id="eSelectSource" name="dropdown" disabled>
+    <option value="speech" selected="selected">Speech</option>
+    <option value="warbird">Airplanes</option>
+  </select>
+  <button id="eButtonPlayback" disabled>Play</button>
+
+  <script>
+    var audioSources = {
+      'speech': 'resources/4ch_B_FuMaNorm_FuMaOrd_speech.wav',
+      'warbird': 'resources/jlwarbirds3.amb'
+    };
+
+    var buttonPlayback, selectSource;
+
+    window.addEventListener('load', function () {
+
+      // Set up the context and the audio element.
+      var audioContext = new AudioContext();
+      var audioElement = document.createElement('audio');
+      audioElement.loop = true;
+      audioElement.crossOrigin = 'anonymous';
+      audioElement.src = audioSources['speech'];
+
+      // Create a decoder.
+      var decoder = Omnitone.createFOADecoder(audioContext, audioElement, {
+        // The example audio is in the FuMa ordering (W,X,Y,Z). So remap the
+        // channels to the ACN format.
+        channelMap: [0, 3, 1, 2]
+      });
+
+      // Handles UI.
+      buttonPlayback = document.getElementById('eButtonPlayback');
+      selectSource = document.getElementById('eSelectSource');
+
+      buttonPlayback.onclick = function (event) {
+        if (event.target.textContent === 'Play') {
+          event.target.textContent = 'Pause';
+          audioElement.play();
+        } else {
+          event.target.textContent = 'Play';
+          audioElement.pause();
+        }
+      };
+
+      selectSource.onchange = function (event) {
+        audioElement.src = audioSources[event.target.value];
+        audioElement.load();
+        if (buttonPlayback.textContent === 'Pause')
+          audioElement.play();
+      };
+
+      // Initialize the decoder and activate the button when ready.
+      decoder.initialize().then(function () {
+        buttonPlayback.disabled = false;
+        selectSource.disabled = false;
+      }, function (onInitializationError) {
+        console.error(onInitializationError);
+      });
+    });
+
+
+  </script>
+</body>
+</html>
