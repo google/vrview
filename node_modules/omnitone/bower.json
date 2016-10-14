@@ -1,0 +1,29 @@
+{
+  "name": "omnitone",
+  "version": "0.1.6",
+  "description": "Spatial Audio Decoder in Web Audio API",
+  "main": "src/main.js",
+  "authors": [
+    "The Chromium Authors"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "ambisonic",
+    "VR audio",
+    "360 audio",
+    "spatial audio",
+    "Web Audio API"
+  ],
+  "homepage": "https://github.com/GoogleChrome/omnitone",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "mocha": "^3.0.0",
+    "chai": "^3.5.0"
+  }
+}
