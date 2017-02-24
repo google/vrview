@@ -6,16 +6,23 @@
   "dependencies": {
     "es6-promise": "^3.0.2",
     "eventemitter3": "^1.2.0",
-    "shaka-player": "^2.0.0",
+    "shaka-player": "2.0.2",
     "stats-js": "^1.0.0-alpha1",
     "three": "^0.81.0",
-    "tween.js": "^16.3.4",
-    "urijs": "^1.18.2",
+    "tween.js": "16.3.5",
+    "urijs": "1.18.4",
     "webvr-boilerplate": "^0.4.6",
-    "webvr-polyfill": "^0.9.18"
+    "webvr-polyfill": "^0.9.18",
+    "cached-path-relative": "1.0.0",
+    "elliptic": "6.3.2",
+    "jsonparse": "1.2.0",
+    "module-deps": "4.0.8",
+    "readable-stream": "2.2.2",
+    "resolve": "1.2.0",
+    "stream-http": "2.5.0"
   },
   "devDependencies": {
-    "browserify": "^13.1.1",
+    "browserify": "13.3.0",
     "derequire": "^2.0.6",
     "rollup": "^0.37.2",
     "uglifyjs": "^2.4.10",
