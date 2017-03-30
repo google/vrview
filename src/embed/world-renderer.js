@@ -64,6 +64,7 @@ WorldRenderer.prototype.render = function(time) {
   this.hotspotRenderer.update(this.camera);
   TWEEN.update(time);
   this.effect.render(this.scene, this.camera);
+  this.clearScene();
 };
 
 /**
@@ -325,6 +326,58 @@ WorldRenderer.prototype.onContextMenu_ = function(e) {
   e.stopPropagation();
   return false;
 };
-
+WorldRenderer.prototype.clearScene = function(){
+    var scene = this.scene;
+    if(scene && scene.children.length>0){
+        for( var i = scene.children.length - 1; i >= 0; i-- ) {
+            if(scene.children[i].geometry){
+                scene.children[i].geometry.dispose();
+            }
+            for( var y = scene.children[i].children.length - 1; y >= 0; y-- ) {
+                if(scene.children[i].children[y].geometry){
+                    scene.children[i].children[y].geometry.dispose();
+                }
+                for( var z = scene.children[i].children[y].children.length - 1; z >= 0; z-- ) {
+                    if(scene.children[i].children[y].children[z].geometry){
+                        scene.children[i].children[y].children[z].geometry.dispose();
+                    }
+                }
+            }
+        }
+    }
+    this.hotspotRenderer.dispose();
+};
+WorldRenderer.prototype.fullClearScene = function(){
+    var scene = this.scene;
+    if(scene && scene.children.length>0){
+        for( var i = scene.children.length - 1; i >= 0; i-- ) {
+            if( scene.children[i] instanceof THREE.Mesh ){
+                if( scene.children[i].material.map ) scene.children[i].material.map.dispose();
+            }
+            if(scene.children[i].material){
+                scene.children[i].material.dispose();
+            }
+            if(scene.children[i].geometry){
+                scene.children[i].geometry.dispose();
+            }
+            for( var y = scene.children[i].children.length - 1; y >= 0; y-- ) {
+                if(scene.children[i].children[y].material){
+                    scene.children[i].children[y].material.dispose();
+                }
+                if(scene.children[i].children[y].geometry){
+                    scene.children[i].children[y].geometry.dispose();
+                }
+                for( var z = scene.children[i].children[y].children.length - 1; z >= 0; z-- ) {
+                    if(scene.children[i].children[y].children[z].material){
+                        scene.children[i].children[y].children[z].material.dispose();
+                    }
+                    if(scene.children[i].children[y].children[z].geometry){
+                        scene.children[i].children[y].children[z].geometry.dispose();
+                    }
+                }
+            }
+        }
+    }
+};
 
 module.exports = WorldRenderer;

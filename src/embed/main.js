@@ -152,6 +152,7 @@ function onSetContent(e) {
   }
   // Remove all of the hotspots.
   worldRenderer.hotspotRenderer.clearAll();
+  worldRenderer.fullClearScene();
   // Fade to black.
   worldRenderer.sphereRenderer.setOpacity(0, 500).then(function() {
     // Then load the new scene.
