@@ -387,5 +387,12 @@ HotspotRenderer.prototype.setOpacity_ = function(id, opacity) {
   outer.material.opacity = opacity * MAX_OUTER_OPACITY;
   inner.material.opacity = opacity * MAX_INNER_OPACITY;
 };
-
+HotspotRenderer.prototype.dispose = function() {
+    for (var id in this.hotspots) {
+        for(var i=0; i<id.length; i++){
+            if(this.hotspots[id].children[i]){ this.hotspots[id].children[i].geometry.dispose();}
+            if(this.hotspots[id].children[i]){ this.hotspots[id].children[i].material.dispose();}
+        }
+    }
+}
 module.exports = HotspotRenderer;
