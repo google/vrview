@@ -363,6 +363,7 @@ WorldRenderer.prototype.fullClearScene = function(){
             for( var y = scene.children[i].children.length - 1; y >= 0; y-- ) {
                 if(scene.children[i].children[y].material){
                     scene.children[i].children[y].material.dispose();
+                    if(scene.children[i].children[y].material.map ) scene.children[i].children[y].material.map.dispose();
                 }
                 if(scene.children[i].children[y].geometry){
                     scene.children[i].children[y].geometry.dispose();
@@ -370,6 +371,7 @@ WorldRenderer.prototype.fullClearScene = function(){
                 for( var z = scene.children[i].children[y].children.length - 1; z >= 0; z-- ) {
                     if(scene.children[i].children[y].children[z].material){
                         scene.children[i].children[y].children[z].material.dispose();
+                        if(scene.children[i].children[y].children[z].material.map )scene.children[i].children[y].children[z].material.map.dispose();
                     }
                     if(scene.children[i].children[y].children[z].geometry){
                         scene.children[i].children[y].children[z].geometry.dispose();
