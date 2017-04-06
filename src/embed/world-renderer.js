@@ -64,6 +64,7 @@ WorldRenderer.prototype.render = function(time) {
   this.hotspotRenderer.update(this.camera);
   TWEEN.update(time);
   this.effect.render(this.scene, this.camera);
+  this.dispose();
 };
 
 /**
@@ -168,13 +169,37 @@ WorldRenderer.prototype.submitFrame = function() {
     this.vrDisplay.submitFrame();
   }
 };
+WorldRenderer.prototype.dispose = function() {
+    var eyeLeft = this.scene.getObjectByName('eyeLeft'),
+        eyeRight = this.scene.getObjectByName('eyeRight');
+    if(!eyeLeft || !eyeRight) return
+    if(eyeLeft.material.map ) eyeLeft.material.map.dispose();
+       eyeLeft.geometry.dispose();
 
+    if(eyeRight.material.map ) eyeRight.material.map.dispose();
+       eyeRight.geometry.dispose();
+}
 WorldRenderer.prototype.destroy = function() {
   if (this.player) {
     this.player.removeAllListeners();
     this.player.destroy();
     this.player = null;
   }
+  var eyeLeft = this.scene.getObjectByName('eyeLeft'),
+      photo = this.scene.getObjectByName('photo'),
+      eyeRight = this.scene.getObjectByName('eyeRight');
+
+  if(eyeLeft.material.map ) eyeLeft.material.map.dispose();
+     eyeLeft.material.dispose();
+     eyeLeft.geometry.dispose();
+  photo.remove(eyeLeft);
+  this.scene.remove(eyeLeft);
+
+  if(eyeRight.material.map ) eyeRight.material.map.dispose();
+     eyeRight.material.dispose();
+     eyeRight.geometry.dispose();
+  photo.remove(eyeRight);
+  this.scene.remove(eyeRight);
 }
 
 WorldRenderer.prototype.didLoad_ = function(opt_event) {
