@@ -586,15 +586,14 @@ Player.prototype.onMessage_ = function(event) {
   var data = message.data;
   switch (type) {
     case 'ready':
+      if (data !== undefined && data.duration !== undefined) {
+        this.duration = data.duration;
+      }
     case 'modechange':
     case 'error':
     case 'click':
     case 'ended':
-      if (type === 'ready') {
-        if (data !== undefined) {
-          this.duration = data.duration;
-        }
-      }
+    case 'getposition':
       this.emit(type, data);
       break;
     case 'volumechange':
@@ -702,7 +701,12 @@ Player.prototype.absolutifyPaths_ = function(contentInfo) {
     }
   }
 };
-
+/**
+ * Get position YAW, PITCH
+ */
+Player.prototype.getPosition = function() {
+    this.sender.send({type: Message.GET_POSITION, data: {}});
+};
 
 module.exports = Player;
 
@@ -732,9 +736,10 @@ var Message = {
   ADD_HOTSPOT: 'addhotspot',
   SET_CONTENT: 'setimage',
   SET_VOLUME: 'setvolume',
+  MUTED: 'muted',
   SET_CURRENT_TIME: 'setcurrenttime',
   DEVICE_MOTION: 'devicemotion',
-  MUTED: 'muted',
+  GET_POSITION: 'getposition',
 };
 
 module.exports = Message;
