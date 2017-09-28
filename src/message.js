@@ -28,6 +28,8 @@ var Message = {
   DEVICE_MOTION: 'devicemotion',
   GET_POSITION: 'getposition',
   SET_FULLSCREEN: 'setfullscreen',
+  FOCUS: 'focus',
+  BLUR: 'blur'
 };
 
 module.exports = Message;
