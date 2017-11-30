@@ -19,6 +19,7 @@ var scenes = {
   dolphins: {
     image: 'dolphins.jpg',
     preview: 'dolphins-preview.jpg',
+    is_stereo: true,
     hotspots: {
       whaleRight: {
         pitch: 0,
@@ -43,6 +44,7 @@ var scenes = {
   whaleLeft: {
     image: 'whale-left.jpg',
     preview: 'whale-left-preview.jpg',
+    is_stereo: true,
     hotspots: {
       whaleRight: {
         pitch: 0,
@@ -67,6 +69,7 @@ var scenes = {
   whaleRight: {
     image: 'whale-right.jpg',
     preview: 'whale-right-preview.jpg',
+    is_stereo: true,
     hotspots: {
       dolphins: {
         pitch: 0,
@@ -91,6 +94,7 @@ var scenes = {
   walrus: {
     image: 'walrus.jpg',
     preview: 'walrus-preview.jpg',
+    is_stereo: true,
     hotspots: {
       whaleLeft: {
         pitch: 0,
@@ -158,7 +162,7 @@ function loadScene(id) {
   vrView.setContent({
     image: scenes[id].image,
     preview: scenes[id].preview,
-    is_stereo: true,
+    is_stereo: scenes[id].is_stereo || false,
     is_autopan_off: true
   });
 
