@@ -164,7 +164,8 @@ function onAddHotspot(e) {
   var radius = parseFloat(e.radius);
   var distance = parseFloat(e.distance);
   var id = e.id;
-  worldRenderer.hotspotRenderer.add(pitch, yaw, radius, distance, id);
+  var icon = e.icon;
+  worldRenderer.hotspotRenderer.add(pitch, yaw, radius, distance, id, icon);
 }
 
 function onSetContent(e) {
