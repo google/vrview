@@ -25,7 +25,7 @@ ES6Promise.polyfill();
 var IFrameMessageReceiver = require('./iframe-message-receiver');
 var Message = require('../message');
 var SceneInfo = require('./scene-info');
-var Stats = require('../../node_modules/stats-js/build/stats.min');
+var Stats = require('stats-js/build/stats.min');
 var Util = require('../util');
 var WebVRPolyfill = require('webvr-polyfill');
 var WorldRenderer = require('./world-renderer');
