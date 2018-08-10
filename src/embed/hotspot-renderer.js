@@ -93,24 +93,30 @@ HotspotRenderer.prototype = new EventEmitter();
  * in meters.
  * @param hotspotId {String} The ID of the hotspot.
  */
-HotspotRenderer.prototype.add = function(pitch, yaw, radius, distance, id) {
+HotspotRenderer.prototype.add = function(pitch, yaw, radius, distance, id, icon) {
   // If a hotspot already exists with this ID, stop.
   if (this.hotspots[id]) {
     // TODO: Proper error reporting.
     console.error('Attempt to add hotspot with existing id %s.', id);
     return;
   }
-  var hotspot = this.createHotspot_(radius, distance);
-  hotspot.name = id;
 
-  // Position the hotspot based on the pitch and yaw specified.
-  var quat = new THREE.Quaternion();
-  quat.setFromEuler(new THREE.Euler(THREE.Math.degToRad(pitch), THREE.Math.degToRad(yaw), 0, 'ZYX'));
-  hotspot.position.applyQuaternion(quat);
-  hotspot.lookAt(new THREE.Vector3());
+  var hotspotPromise = this.createHotspot_(radius, distance, icon);
+  var self = this;
+  hotspotPromise.then(function(hotspot){
+    hotspot.name = id;
 
-  this.hotspotRoot.add(hotspot);
-  this.hotspots[id] = hotspot;
+    // Position the hotspot based on the pitch and yaw specified.
+    var quat = new THREE.Quaternion();
+    quat.setFromEuler(new THREE.Euler(THREE.Math.degToRad(pitch), THREE.Math.degToRad(yaw), 0, 'ZYX'));
+    hotspot.position.applyQuaternion(quat);
+    hotspot.lookAt(new THREE.Vector3());
+    self.hotspotRoot.add(hotspot);
+    self.hotspots[id] = hotspot;
+  }).catch(function(err){
+    self.worldRenderer.emit('error', 'Error while creating the hotspot, check the hotspot image \' ' + icon +'\'');
+  });
+
 }
 
 /**
@@ -282,34 +288,63 @@ HotspotRenderer.prototype.getSize_ = function() {
   return this.worldRenderer.renderer.getSize();
 };
 
-HotspotRenderer.prototype.createHotspot_ = function(radius, distance) {
-  var innerGeometry = new THREE.CircleGeometry(radius, 32);
+HotspotRenderer.prototype.createHotspot_ = function(radius, distance, icon) {
 
-  var innerMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff, side: THREE.DoubleSide, transparent: true,
-    opacity: MAX_INNER_OPACITY, depthTest: false
-  });
-
-  var inner = new THREE.Mesh(innerGeometry, innerMaterial);
-  inner.name = 'inner';
-
-  var outerMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff, side: THREE.DoubleSide, transparent: true,
-    opacity: MAX_OUTER_OPACITY, depthTest: false
-  });
-  var outerGeometry = new THREE.RingGeometry(radius * 0.85, radius, 32);
-  var outer = new THREE.Mesh(outerGeometry, outerMaterial);
-  outer.name = 'outer';
-
+  var hotspotPromise;
   // Position at the extreme end of the sphere.
   var hotspot = new THREE.Object3D();
   hotspot.position.z = -distance;
   hotspot.scale.copy(NORMAL_SCALE);
 
-  hotspot.add(inner);
-  hotspot.add(outer);
+  //If no icon path is entered, create a default hotspot
+  if(!icon){
+    hotspotPromise = new Promise(function(resolve, reject) {
+      var innerGeometry = new THREE.CircleGeometry(radius, 32);
 
-  return hotspot;
+      var innerMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, side: THREE.DoubleSide, transparent: true,
+        opacity: MAX_INNER_OPACITY, depthTest: false
+      });
+
+      var inner = new THREE.Mesh(innerGeometry, innerMaterial);
+      inner.name = 'inner';
+
+      var outerMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, side: THREE.DoubleSide, transparent: true,
+        opacity: MAX_OUTER_OPACITY, depthTest: false
+      });
+      var outerGeometry = new THREE.RingGeometry(radius * 0.85, radius, 32);
+      var outer = new THREE.Mesh(outerGeometry, outerMaterial);
+      outer.name = 'outer';
+
+      hotspot.add(inner);
+      hotspot.add(outer);
+
+      resolve(hotspot);
+    });
+  }else{
+    hotspotPromise = new Promise(
+      function(resolve, reject) {
+        var txLoader = new THREE.TextureLoader();
+        txLoader.crossOrigin = 'anonymous';
+        txLoader.load(icon, function(texture){
+          var material = new THREE.MeshBasicMaterial({ map: texture, transparent: false,
+          depthTest: false });
+          var geometry 	= new THREE.CircleGeometry(radius, 32);
+          var mesh			= new THREE.Mesh(geometry, material);
+          mesh.name = 'texture_mesh';
+
+          hotspot.add(mesh);
+
+          resolve(hotspot);
+        }, undefined, function(err){
+          reject(err)
+        });
+      }
+    );
+  }
+
+  return hotspotPromise;
 };
 
 /**
@@ -353,7 +388,7 @@ HotspotRenderer.prototype.focus_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(FOCUS_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
-  
+
   if (this.worldRenderer.isVRMode()) {
     this.timeForHospotClick = setTimeout(function () {
       this.emit('click', id);
@@ -367,7 +402,7 @@ HotspotRenderer.prototype.blur_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(NORMAL_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
-  
+
   if (this.timeForHospotClick) {
     clearTimeout( this.timeForHospotClick );
   }
@@ -378,8 +413,11 @@ HotspotRenderer.prototype.down_ = function(id) {
   var hotspot = this.hotspots[id];
   var outer = hotspot.getObjectByName('inner');
 
-  this.tween = new TWEEN.Tween(outer.material.color).to(ACTIVE_COLOR, ACTIVE_DURATION)
-      .start();
+  if(outer){
+    this.tween = new TWEEN.Tween(outer.material.color).to(ACTIVE_COLOR, ACTIVE_DURATION)
+    .start();
+  }
+
 };
 
 HotspotRenderer.prototype.up_ = function(id) {
@@ -387,8 +425,11 @@ HotspotRenderer.prototype.up_ = function(id) {
   var hotspot = this.hotspots[id];
   var outer = hotspot.getObjectByName('inner');
 
-  this.tween = new TWEEN.Tween(outer.material.color).to(INACTIVE_COLOR, ACTIVE_DURATION)
-      .start();
+  if(outer){
+    this.tween = new TWEEN.Tween(outer.material.color).to(INACTIVE_COLOR, ACTIVE_DURATION)
+    .start();
+  }
+
 };
 
 HotspotRenderer.prototype.setOpacity_ = function(id, opacity) {
@@ -396,8 +437,10 @@ HotspotRenderer.prototype.setOpacity_ = function(id, opacity) {
   var outer = hotspot.getObjectByName('outer');
   var inner = hotspot.getObjectByName('inner');
 
-  outer.material.opacity = opacity * MAX_OUTER_OPACITY;
-  inner.material.opacity = opacity * MAX_INNER_OPACITY;
+  if(inner && outer){
+    outer.material.opacity = opacity * MAX_OUTER_OPACITY;
+    inner.material.opacity = opacity * MAX_INNER_OPACITY;
+  }
 };
 
 module.exports = HotspotRenderer;
