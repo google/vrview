@@ -199,6 +199,8 @@ Player.prototype.onMessage_ = function(event) {
     case 'click':
     case 'ended':
     case 'getposition':
+    case 'focus':
+    case 'blur':
       this.emit(type, data);
       break;
     case 'volumechange':

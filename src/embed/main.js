@@ -53,6 +53,8 @@ worldRenderer.on('modechange', onModeChange);
 worldRenderer.on('ended', onEnded);
 worldRenderer.on('play', onPlay);
 worldRenderer.hotspotRenderer.on('click', onHotspotClick);
+worldRenderer.hotspotRenderer.on('blur', onHotspotBlur);
+worldRenderer.hotspotRenderer.on('focus', onHotspotFocus);
 
 window.worldRenderer = worldRenderer;
 
@@ -269,6 +271,20 @@ function onHotspotClick(id) {
     type: 'click',
     data: {id: id}
   });
+}
+
+function onHotspotBlur(id) {
+    Util.sendParentMessage({
+        type: 'blur',
+        data: {id: id}
+    });
+}
+
+function onHotspotFocus(id) {
+    Util.sendParentMessage({
+        type: 'focus',
+        data: {id: id}
+    });
 }
 
 function onPlay() {
