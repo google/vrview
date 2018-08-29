@@ -353,11 +353,11 @@ HotspotRenderer.prototype.focus_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(FOCUS_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
-  
+
   if (this.worldRenderer.isVRMode()) {
     this.timeForHospotClick = setTimeout(function () {
       this.emit('click', id);
-    }, 1200 )
+    }.bind( this ), 1200 )
   }
 };
 
@@ -367,7 +367,7 @@ HotspotRenderer.prototype.blur_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(NORMAL_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
-  
+
   if (this.timeForHospotClick) {
     clearTimeout( this.timeForHospotClick );
   }
