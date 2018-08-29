@@ -64,6 +64,12 @@ WorldRenderer.prototype.render = function(time) {
   TWEEN.update(time);
   this.effect.render(this.scene, this.camera);
   this.hotspotRenderer.update(this.camera);
+  /**
+  * Autopan only for desktop with image type, and if only autopan is enable 
+  */
+  if(!Util.isMobile() && !this.sceneInfo.video && !this.sceneInfo.isAutopanOff){
+	this.autopan();
+  }
 };
 
 /**
@@ -250,11 +256,14 @@ WorldRenderer.prototype.setDefaultYaw_ = function(angleRad) {
  * there is live content there (on desktop only).
  */
 WorldRenderer.prototype.autopan = function(duration) {
-  var targetY = this.camera.parent.rotation.y - AUTOPAN_ANGLE;
-  var tween = new TWEEN.Tween(this.camera.parent.rotation)
-      .to({y: targetY}, AUTOPAN_DURATION)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+	var targetY = this.camera.parent.rotation.y - AUTOPAN_ANGLE;
+	var tween = new TWEEN.Tween(this.camera.parent.rotation);
+	if(this.sceneInfo.autoPanSpeed > 0){
+		tween.to({y:targetY}, this.sceneInfo.autoPanSpeed);
+	}else{
+      	tween.to({y: targetY}, AUTOPAN_DURATION);
+	}
+	tween.easing(TWEEN.Easing.Quadratic.Out).start();
 };
 
 WorldRenderer.prototype.init_ = function(hideFullscreenButton) {

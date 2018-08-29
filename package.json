@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "@tweenjs/tween.js": "^16.8.0",
+    "acorn": "^5.7.2",
     "es6-promise": "^3.0.2",
     "eventemitter3": "^1.2.0",
     "lodash": "^4.17.5",
