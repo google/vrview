@@ -256,19 +256,14 @@ WorldRenderer.prototype.setDefaultYaw_ = function(angleRad) {
  * there is live content there (on desktop only).
  */
 WorldRenderer.prototype.autopan = function(duration) {
-  if(this.sceneInfo.autoPanSpeed > 0){
 	var targetY = this.camera.parent.rotation.y - AUTOPAN_ANGLE;
-	var tween = new TWEEN.Tween(this.camera.parent.rotation)
-		.to({y:targetY}, this.sceneInfo.autoPanSpeed)
-		.easing(TWEEN.Easing.Quadratic.Out)
-		.start();
-  }else{
-  	var targetY = this.camera.parent.rotation.y - AUTOPAN_ANGLE;
- 	var tween = new TWEEN.Tween(this.camera.parent.rotation)
-      		.to({y: targetY}, AUTOPAN_DURATION)
-      		.easing(TWEEN.Easing.Quadratic.Out)
-      		.start();
-  }
+	var tween = new TWEEN.Tween(this.camera.parent.rotation);
+	if(this.sceneInfo.autoPanSpeed > 0){
+		tween.to({y:targetY}, this.sceneInfo.autoPanSpeed);
+	}else{
+      	tween.to({y: targetY}, AUTOPAN_DURATION);
+	}
+	tween.easing(TWEEN.Easing.Quadratic.Out).start();
 };
 
 WorldRenderer.prototype.init_ = function(hideFullscreenButton) {
