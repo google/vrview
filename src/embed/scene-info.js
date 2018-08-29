@@ -28,6 +28,7 @@ var CAMEL_TO_UNDERSCORE = {
   isDebug: 'is_debug',
   isVROff: 'is_vr_off',
   isAutopanOff: 'is_autopan_off',
+  autoPanSpeed: 'auto_pan_speed',
   hideFullscreenButton: 'hide_fullscreen_button'
 };
 
@@ -52,6 +53,7 @@ function SceneInfo(opt_params) {
   this.isDebug = Util.parseBoolean(params.isDebug);
   this.isVROff = Util.parseBoolean(params.isVROff);
   this.isAutopanOff = Util.parseBoolean(params.isAutopanOff);
+  this.autoPanSpeed = parseInt(params.autoPanSpeed?params.autoPanSpeed:20000);
   this.loop = Util.parseBoolean(params.player.loop);
   this.volume = parseFloat(
       params.player.volume ? params.player.volume : '1');
