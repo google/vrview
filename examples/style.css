@@ -41,7 +41,7 @@ iframe {
     cursor: pointer;
     opacity: 0.5;
   }
- 
+
   #controls > *:hover {
     opacity: 1;
   }
@@ -54,9 +54,15 @@ iframe {
   height: 24px;
 }
 
-  #toggleplay.paused {
-    background: url('img/ic_play_arrow_black_24dp.svg');
-  }
+#toggleplay.paused {
+  background: url('img/ic_play_arrow_black_24dp.svg');
+}
+
+#time {
+  float: left;
+  height: 19px;
+  padding-top: 5px;
+}
 
 #togglemute {
   float: right;
@@ -65,9 +71,15 @@ iframe {
   height: 24px;
 }
 
-  #togglemute.muted {
-    background: url('img/ic_volume_off_black_24dp.svg');
-  }
+#togglemute.muted {
+  background: url('img/ic_volume_off_black_24dp.svg');
+}
+
+#volumerange {
+  float: right;
+  width: 100px;
+  height: 24px;
+}
 
 /* MOBILE */
 @media screen and (max-width: 700px) {

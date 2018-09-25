@@ -14,8 +14,9 @@
  */
 
 var Eyes = require('./eyes');
-var TWEEN = require('tween.js');
+var TWEEN = require('@tweenjs/tween.js');
 var Util = require('../util');
+var VideoType = require('../video-type');
 
 function SphereRenderer(scene) {
   this.scene = scene;
@@ -51,7 +52,7 @@ SphereRenderer.prototype.setPhotosphere = function(src, opt_params) {
 /**
  * @return {Promise} Yeah.
  */
-SphereRenderer.prototype.set360Video = function(videoElement, opt_params) {
+SphereRenderer.prototype.set360Video = function (videoElement, videoType, opt_params) {
   return new Promise(function(resolve, reject) {
     this.resolve = resolve;
     this.reject = reject;
@@ -62,10 +63,18 @@ SphereRenderer.prototype.set360Video = function(videoElement, opt_params) {
 
     // Load the video texture.
     var videoTexture = new THREE.VideoTexture(videoElement);
-    videoTexture.minFilter = THREE.NearestFilter;
-    videoTexture.magFilter = THREE.NearestFilter;
-    videoTexture.format = THREE.RGBFormat;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
     videoTexture.generateMipmaps = false;
+
+    if (Util.isSafari() && videoType === VideoType.HLS) {
+      // fix black screen issue on safari
+      videoTexture.format = THREE.RGBAFormat;
+      videoTexture.flipY = false;
+    } else {
+      videoTexture.format = THREE.RGBFormat;
+    }
+
     videoTexture.needsUpdate = true;
 
     this.onTextureLoaded_(videoTexture);
@@ -111,10 +120,13 @@ SphereRenderer.prototype.onTextureLoaded_ = function(texture) {
   // Display in left and right eye respectively.
   sphereLeft.layers.set(Eyes.LEFT);
   sphereLeft.eye = Eyes.LEFT;
+  sphereLeft.name = 'eyeLeft';
   sphereRight.layers.set(Eyes.RIGHT);
   sphereRight.eye = Eyes.RIGHT;
+  sphereRight.name = 'eyeRight';
 
-  this.scene.getObjectByName('photo').children = [sphereLeft, sphereRight];
+
+    this.scene.getObjectByName('photo').children = [sphereLeft, sphereRight];
 
   this.resolve();
 };
@@ -148,7 +160,30 @@ SphereRenderer.prototype.createPhotosphere_ = function(texture, opt_params) {
     }
   }
 
-  var material = new THREE.MeshBasicMaterial({ map: texture });
+  var material;
+  if (texture.format === THREE.RGBAFormat && texture.flipY === false) {
+    material = new THREE.ShaderMaterial({
+      uniforms: {
+        texture: { value: texture }
+      },
+      vertexShader: [
+        "varying vec2 vUV;",
+        "void main() {",
+        "	vUV = vec2( uv.x, 1.0 - uv.y );",
+        "	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+        "}"
+      ].join("\n"),
+      fragmentShader: [
+        "uniform sampler2D texture;",
+        "varying vec2 vUV;",
+        "void main() {",
+        " gl_FragColor = texture2D( texture, vUV  )" + (Util.isIOS() ? ".bgra" : "") + ";",
+        "}"
+      ].join("\n")
+    });
+  } else {
+    material = new THREE.MeshBasicMaterial({ map: texture });
+  }
   var out = new THREE.Mesh(geometry, material);
   //out.visible = false;
   out.renderOrder = -1;

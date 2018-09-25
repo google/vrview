@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-Util = window.Util || {};
+var Util = window.Util || {};
 
 Util.isDataURI = function(src) {
   return src && src.indexOf('data:') == 0;
@@ -159,7 +159,7 @@ Util.isIOS9OrLess = function() {
 };
 
 Util.getExtension = function(url) {
-  return url.split('.').pop();
+  return url.split('.').pop().split('?')[0];
 };
 
 Util.createGetParams = function(params) {
@@ -188,5 +188,54 @@ Util.parseBoolean = function(value) {
     return !!value;
   }
 };
+
+/**
+ * @param base {String} An absolute directory root.
+ * @param relative {String} A relative path.
+ *
+ * @returns {String} An absolute path corresponding to the rootPath.
+ *
+ * From http://stackoverflow.com/a/14780463/693934.
+ */
+Util.relativeToAbsolutePath = function(base, relative) {
+  var stack = base.split('/');
+  var parts = relative.split('/');
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i] == '.') {
+      continue;
+    }
+    if (parts[i] == '..') {
+      stack.pop();
+    } else {
+      stack.push(parts[i]);
+    }
+  }
+  return stack.join('/');
+};
+
+/**
+ * @return {Boolean} True iff the specified path is an absolute path.
+ */
+Util.isPathAbsolute = function(path) {
+  return ! /^(?:\/|[a-z]+:\/\/)/.test(path);
+}
+
+Util.isEmptyObject = function(obj) {
+  return Object.getOwnPropertyNames(obj).length == 0;
+};
+
+Util.isDebug = function() {
+  return Util.parseBoolean(Util.getQueryParameter('debug'));
+};
+
+Util.getCurrentScript = function() {
+  // Note: in IE11, document.currentScript doesn't work, so we fall back to this
+  // hack, taken from https://goo.gl/TpExuH.
+  if (!document.currentScript) {
+    console.warn('This browser does not support document.currentScript. Trying fallback.');
+  }
+  return document.currentScript || document.scripts[document.scripts.length - 1];
+}
+
 
 module.exports = Util;

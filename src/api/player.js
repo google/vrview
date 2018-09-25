@@ -19,7 +19,7 @@ var Message = require('../message');
 var Util = require('../util');
 
 // Save the executing script. This will be used to calculate the embed URL.
-var CURRENT_SCRIPT_SRC = document.currentScript.src;
+var CURRENT_SCRIPT_SRC = Util.getCurrentScript().src;
 var FAKE_FULLSCREEN_CLASS = 'vrview-fake-fullscreen';
 
 /**
@@ -30,9 +30,9 @@ var FAKE_FULLSCREEN_CLASS = 'vrview-fake-fullscreen';
  *    modechange: When the viewing mode changes (normal, fullscreen, VR).
  *    click (id): When a hotspot is clicked.
  */
-function Player(selector, params) {
+function Player(selector, contentInfo) {
   // Create a VR View iframe depending on the parameters.
-  var iframe = this.createIframe_(params);
+  var iframe = this.createIframe_(contentInfo);
   this.iframe = iframe;
 
   var parentEl = document.querySelector(selector);
@@ -46,6 +46,17 @@ function Player(selector, params) {
 
   // Expose a public .isPaused attribute.
   this.isPaused = false;
+
+  // Expose a public .isMuted attribute.
+  this.isMuted = false;
+  if (typeof contentInfo.muted !== 'undefined') {
+    this.isMuted = contentInfo.muted;
+  }
+
+  // Other public attributes
+  this.currentTime = 0;
+  this.duration = 0;
+  this.volume = contentInfo.volume != undefined ? contentInfo.volume : 1;
 
   if (Util.isIOS()) {
     this.injectFullscreenStylesheet_();
@@ -83,7 +94,12 @@ Player.prototype.pause = function() {
   this.sender.send({type: Message.PAUSE});
 };
 
+/**
+ * Equivalent of HTML5 setSrc().
+ * @param {String} contentInfo
+ */
 Player.prototype.setContent = function(contentInfo) {
+  this.absolutifyPaths_(contentInfo);
   var data = {
     contentInfo: contentInfo
   };
@@ -100,28 +116,66 @@ Player.prototype.setVolume = function(volumeLevel) {
   this.sender.send({type: Message.SET_VOLUME, data: data});
 };
 
+Player.prototype.getVolume = function() {
+  return this.volume;
+};
+
+/**
+ * Sets the mute state of the video element. true is muted, false is unmuted.
+ */
+Player.prototype.mute = function(muteState) {
+  var data = {
+    muteState: muteState
+  };
+  this.sender.send({type: Message.MUTED, data: data});
+};
+
+/**
+ * Set the current time of the media being played
+ * @param {Number} time
+ */
+Player.prototype.setCurrentTime = function(time) {
+  var data = {
+    currentTime: time
+  };
+  this.sender.send({type: Message.SET_CURRENT_TIME, data: data});
+};
+
+Player.prototype.getCurrentTime = function() {
+  return this.currentTime;
+};
+
+Player.prototype.getDuration = function() {
+  return this.duration;
+};
+Player.prototype.setFullscreen = function() {
+  this.sender.send({type: Message.SET_FULLSCREEN});
+};
+
 /**
  * Helper for creating an iframe.
  *
  * @return {IFrameElement} The iframe.
  */
-Player.prototype.createIframe_ = function(params) {
+Player.prototype.createIframe_ = function(contentInfo) {
+  this.absolutifyPaths_(contentInfo);
+
   var iframe = document.createElement('iframe');
   iframe.setAttribute('allowfullscreen', true);
   iframe.setAttribute('scrolling', 'no');
   iframe.style.border = 0;
 
   // Handle iframe size if width and height are specified.
-  if (params.hasOwnProperty('width')) {
-    iframe.setAttribute('width', params.width);
-    delete params.width;
+  if (contentInfo.hasOwnProperty('width')) {
+    iframe.setAttribute('width', contentInfo.width);
+    delete contentInfo.width;
   }
-  if (params.hasOwnProperty('height')) {
-    iframe.setAttribute('height', params.height);
-    delete params.height;
+  if (contentInfo.hasOwnProperty('height')) {
+    iframe.setAttribute('height', contentInfo.height);
+    delete contentInfo.height;
   }
 
-  var url = this.getEmbedUrl_() + Util.createGetParams(params);
+  var url = this.getEmbedUrl_() + Util.createGetParams(contentInfo);
   iframe.src = url;
 
   return iframe;
@@ -129,19 +183,47 @@ Player.prototype.createIframe_ = function(params) {
 
 Player.prototype.onMessage_ = function(event) {
   var message = event.data;
+  if (!message || !message.type) {
+    console.warn('Received message with no type.');
+    return;
+  }
   var type = message.type.toLowerCase();
   var data = message.data;
-
   switch (type) {
     case 'ready':
+      if (data !== undefined && data.duration !== undefined) {
+        this.duration = data.duration;
+      }
     case 'modechange':
     case 'error':
     case 'click':
+    case 'ended':
+    case 'getposition':
       this.emit(type, data);
       break;
+    case 'volumechange':
+      this.volume = data;
+      this.emit('volumechange', data);
+      break;
+    case 'muted':
+      this.isMuted = data;
+      this.emit('mute', data);
+      break;
+    case 'timeupdate':
+      this.currentTime = data;
+      this.emit('timeupdate', {
+        currentTime: this.currentTime,
+        duration: this.duration
+      });
+      break;
+    case 'play':
     case 'paused':
-      console.log('isPaused', data);
       this.isPaused = data;
+      if (this.isPaused) {
+        this.emit('pause', data);
+      } else {
+        this.emit('play', data);
+      }
       break;
     case 'enter-fullscreen':
     case 'enter-vr':
@@ -191,7 +273,9 @@ Player.prototype.injectFullscreenStylesheet_ = function() {
 
 Player.prototype.getEmbedUrl_ = function() {
   // Assume that the script is in $ROOT/build/something.js, and that the iframe
-  // HTML is in $ROOT.
+  // HTML is in $ROOT/index.html.
+  //
+  // E.g: /vrview/2.0/build/vrview.min.js => /vrview/2.0/index.html.
   var path = CURRENT_SCRIPT_SRC;
   var split = path.split('/');
   var rootSplit = split.slice(0, split.length - 2);
@@ -199,5 +283,34 @@ Player.prototype.getEmbedUrl_ = function() {
   return rootPath + '/index.html';
 };
 
+Player.prototype.getDirName_ = function() {
+  var path = window.location.pathname;
+  path = path.substring(0, path.lastIndexOf('/'));
+  return location.protocol + '//' + location.host + path;
+};
+
+/**
+ * Make all of the URLs inside contentInfo absolute instead of relative.
+ */
+Player.prototype.absolutifyPaths_ = function(contentInfo) {
+  var dirName = this.getDirName_();
+  var urlParams = ['image', 'preview', 'video'];
+
+  for (var i = 0; i < urlParams.length; i++) {
+    var name = urlParams[i];
+    var path = contentInfo[name];
+    if (path && Util.isPathAbsolute(path)) {
+      var absolute = Util.relativeToAbsolutePath(dirName, path);
+      contentInfo[name] = absolute;
+      //console.log('Converted to absolute: %s', absolute);
+    }
+  }
+};
+/**
+ * Get position YAW, PITCH
+ */
+Player.prototype.getPosition = function() {
+    this.sender.send({type: Message.GET_POSITION, data: {}});
+};
 
 module.exports = Player;

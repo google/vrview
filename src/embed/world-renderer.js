@@ -18,7 +18,7 @@ var Eyes = require('./eyes');
 var HotspotRenderer = require('./hotspot-renderer');
 var ReticleRenderer = require('./reticle-renderer');
 var SphereRenderer = require('./sphere-renderer');
-var TWEEN = require('tween.js');
+var TWEEN = require('@tweenjs/tween.js');
 var Util = require('../util');
 var VideoProxy = require('./video-proxy');
 var WebVRManager = require('webvr-boilerplate');
@@ -40,22 +40,30 @@ var AUTOPAN_ANGLE = 0.4;
  *   error: if there is an error loading the scene.
  *   modechange(Boolean isVR): if the mode (eg. VR, fullscreen, etc) changes.
  */
-function WorldRenderer() {
-  this.init_();
+function WorldRenderer(params) {
+  this.init_(params.hideFullscreenButton);
 
   this.sphereRenderer = new SphereRenderer(this.scene);
   this.hotspotRenderer = new HotspotRenderer(this);
   this.hotspotRenderer.on('focus', this.onHotspotFocus_.bind(this));
   this.hotspotRenderer.on('blur', this.onHotspotBlur_.bind(this));
   this.reticleRenderer = new ReticleRenderer(this.camera);
+
+  // Get the VR Display as soon as we initialize.
+  navigator.getVRDisplays().then(function(displays) {
+    if (displays.length > 0) {
+      this.vrDisplay = displays[0];
+    }
+  }.bind(this));
+
 }
 WorldRenderer.prototype = new EventEmitter();
 
 WorldRenderer.prototype.render = function(time) {
   this.controls.update();
-  this.hotspotRenderer.update(this.camera);
   TWEEN.update(time);
   this.effect.render(this.scene, this.camera);
+  this.hotspotRenderer.update(this.camera);
 };
 
 /**
@@ -75,7 +83,11 @@ WorldRenderer.prototype.setScene = function(scene) {
 
   var params = {
     isStereo: scene.isStereo,
+    loop: scene.loop,
+    volume: scene.volume,
+    muted: scene.muted
   };
+
   this.setDefaultYaw_(scene.defaultYaw || 0);
 
   // Disable VR mode if explicitly disabled, or if we're loading a video on iOS
@@ -128,9 +140,9 @@ WorldRenderer.prototype.setScene = function(scene) {
         this.didLoadFail_('Video is not supported on IE11.');
       }
     } else {
-      this.player = new AdaptivePlayer();
-      this.player.on('load', function(videoElement) {
-        self.sphereRenderer.set360Video(videoElement, params).then(function() {
+      this.player = new AdaptivePlayer(params);
+      this.player.on('load', function(videoElement, videoType) {
+        self.sphereRenderer.set360Video(videoElement, videoType, params).then(function() {
           self.didLoad_({videoElement: videoElement});
         }).catch(self.didLoadFail_.bind(self));
       });
@@ -144,7 +156,9 @@ WorldRenderer.prototype.setScene = function(scene) {
   }
 
   this.sceneInfo = scene;
-  console.log('Loaded scene', scene);
+  if (Util.isDebug()) {
+    console.log('Loaded scene', scene);
+  }
 
   return promise;
 };
@@ -154,9 +168,26 @@ WorldRenderer.prototype.isVRMode = function() {
 };
 
 WorldRenderer.prototype.submitFrame = function() {
-  if (this.vrDisplay) {
+  if (this.isVRMode()) {
     this.vrDisplay.submitFrame();
   }
+};
+
+WorldRenderer.prototype.disposeEye_ = function(eye) {
+  if (eye) {
+    if (eye.material.map) {
+      eye.material.map.dispose();
+    }
+    eye.material.dispose();
+    eye.geometry.dispose();
+  }
+};
+
+WorldRenderer.prototype.dispose = function() {
+  var eyeLeft = this.scene.getObjectByName('eyeLeft');
+  this.disposeEye_(eyeLeft);
+  var eyeRight = this.scene.getObjectByName('eyeRight');
+  this.disposeEye_(eyeRight);
 };
 
 WorldRenderer.prototype.destroy = function() {
@@ -165,7 +196,22 @@ WorldRenderer.prototype.destroy = function() {
     this.player.destroy();
     this.player = null;
   }
-}
+  var photo = this.scene.getObjectByName('photo');
+  var eyeLeft = this.scene.getObjectByName('eyeLeft');
+  var eyeRight = this.scene.getObjectByName('eyeRight');
+
+  if (eyeLeft) {
+    this.disposeEye_(eyeLeft);
+    photo.remove(eyeLeft);
+    this.scene.remove(eyeLeft);
+  }
+
+  if (eyeRight) {
+    this.disposeEye_(eyeRight);
+    photo.remove(eyeRight);
+    this.scene.remove(eyeRight);
+  }
+};
 
 WorldRenderer.prototype.didLoad_ = function(opt_event) {
   var event = opt_event || {};
@@ -189,7 +235,14 @@ WorldRenderer.prototype.didLoadFail_ = function(message) {
 WorldRenderer.prototype.setDefaultYaw_ = function(angleRad) {
   // Rotate the camera parent to take into account the scene's rotation.
   // By default, it should be at the center of the image.
-  this.camera.parent.rotation.y = (Math.PI / 2.0) + angleRad;
+  var display = this.controls.getVRDisplay();
+  // For desktop, we subtract the current display Y axis
+  var theta = display.theta_ || 0;
+  // For devices with orientation we make the current view center
+  if (display.poseSensor_) {
+    display.poseSensor_.resetPose();
+  }
+  this.camera.parent.rotation.y = (Math.PI / 2.0) + angleRad - theta;
 };
 
 /**
@@ -204,7 +257,7 @@ WorldRenderer.prototype.autopan = function(duration) {
       .start();
 };
 
-WorldRenderer.prototype.init_ = function() {
+WorldRenderer.prototype.init_ = function(hideFullscreenButton) {
   var container = document.querySelector('body');
   var aspect = window.innerWidth / window.innerHeight;
   var camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 100);
@@ -236,7 +289,7 @@ WorldRenderer.prototype.init_ = function() {
   this.renderer = renderer;
   this.effect = effect;
   this.controls = controls;
-  this.manager = new WebVRManager(renderer, effect, {predistorted: false});
+  this.manager = new WebVRManager(renderer, effect, {predistorted: false, hideButton: hideFullscreenButton});
 
   this.scene = this.createScene_();
   this.scene.add(this.camera.parent);
@@ -259,14 +312,14 @@ WorldRenderer.prototype.onResize_ = function() {
 };
 
 WorldRenderer.prototype.onVRDisplayPresentChange_ = function(e) {
-  console.log('onVRDisplayPresentChange_');
-  this.vrDisplay = e.display;
+  if (Util.isDebug()) {
+    console.log('onVRDisplayPresentChange_');
+  }
   var isVR = this.isVRMode();
 
   // If the mode changed to VR and there is at least one hotspot, show reticle.
   var isReticleVisible = isVR && this.hotspotRenderer.getCount() > 0;
-  //this.reticleRenderer.setVisibility(isReticleVisible);
-  console.log('Mode changed and reticle visibility is now: %s', isReticleVisible);
+  this.reticleRenderer.setVisibility(isReticleVisible);
 
   // Resize the renderer for good measure.
   this.onResize_();
@@ -297,13 +350,11 @@ WorldRenderer.prototype.createScene_ = function(opt_params) {
 };
 
 WorldRenderer.prototype.onHotspotFocus_ = function(id) {
-  console.log('onHotspotFocus_', id);
   // Set the default cursor to be a pointer.
   this.setCursor_('pointer');
 };
 
 WorldRenderer.prototype.onHotspotBlur_ = function(id) {
-  console.log('onHotspotBlur_', id);
   // Reset the default cursor to be the default one.
   this.setCursor_('');
 };
@@ -317,6 +368,5 @@ WorldRenderer.prototype.onContextMenu_ = function(e) {
   e.stopPropagation();
   return false;
 };
-
 
 module.exports = WorldRenderer;

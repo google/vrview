@@ -13,29 +13,28 @@
  * limitations under the License.
  */
 var vrView;
-var imageBase = 'examples/gallery/';
 
 // All the scenes for the experience
 var scenes = {
   petra: {
-    image: imageBase + 'petra.jpg',
-    preview: imageBase + 'petra-preview.jpg'
+    image: 'petra.jpg',
+    preview: 'petra-preview.jpg'
   },
   christTheRedeemer: {
-    image: imageBase + 'christ-redeemer.jpg',
-    preview: imageBase + 'christ-redeemer-preview.jpg'
+    image: 'christ-redeemer.jpg',
+    preview: 'christ-redeemer-preview.jpg'
   },
   machuPicchu: {
-    image: imageBase + 'machu-picchu.jpg',
-    preview: imageBase + 'machu-picchu-preview.jpg'
+    image: 'machu-picchu.jpg',
+    preview: 'machu-picchu-preview.jpg'
   },
   chichenItza: {
-    image: imageBase + 'chichen-itza.jpg',
-    preview: imageBase + 'chichen-itza-preview.jpg'
+    image: 'chichen-itza.jpg',
+    preview: 'chichen-itza-preview.jpg'
   },
   tajMahal: {
-    image: imageBase + 'taj-mahal.jpg',
-    preview: imageBase + 'taj-mahal-preview.jpg'
+    image: 'taj-mahal.jpg',
+    preview: 'taj-mahal-preview.jpg'
   },
 };
 
@@ -43,13 +42,14 @@ function onLoad() {
   vrView = new VRView.Player('#vrview', {
     width: '100%',
     height: 480,
-    image: 'examples/gallery/blank.png',
+    image: 'blank.png',
     is_stereo: false,
     is_autopan_off: true
   });
 
   vrView.on('ready', onVRViewReady);
   vrView.on('modechange', onModeChange);
+  vrView.on('getposition', onGetPosition);
   vrView.on('error', onVRViewError);
 }
 
@@ -68,7 +68,7 @@ function loadScene(id) {
   for (var i = 0; i < carouselLinks.length; i++) {
     carouselLinks[i].classList.remove('current');
   }
-
+    vrView.getPosition();
   // Highlight current carousel item
   document.querySelector('ul.carousel li a[href="#' + id + '"]')
       .classList.add('current');
@@ -98,6 +98,10 @@ function onModeChange(e) {
 
 function onVRViewError(e) {
   console.log('Error! %s', e.message);
+}
+
+function onGetPosition(e) {
+    console.log(e)
 }
 
 window.addEventListener('load', onLoad);

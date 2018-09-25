@@ -36,20 +36,28 @@ receiver.on(Message.PAUSE, onPauseRequest);
 receiver.on(Message.ADD_HOTSPOT, onAddHotspot);
 receiver.on(Message.SET_CONTENT, onSetContent);
 receiver.on(Message.SET_VOLUME, onSetVolume);
+receiver.on(Message.MUTED, onMuted);
+receiver.on(Message.SET_CURRENT_TIME, onUpdateCurrentTime);
+receiver.on(Message.GET_POSITION, onGetPosition);
+receiver.on(Message.SET_FULLSCREEN, onSetFullscreen);
 
 window.addEventListener('load', onLoad);
 
 var stats = new Stats();
+var scene = SceneInfo.loadFromGetParams();
 
-var worldRenderer = new WorldRenderer();
+var worldRenderer = new WorldRenderer(scene);
 worldRenderer.on('error', onRenderError);
 worldRenderer.on('load', onRenderLoad);
 worldRenderer.on('modechange', onModeChange);
+worldRenderer.on('ended', onEnded);
+worldRenderer.on('play', onPlay);
 worldRenderer.hotspotRenderer.on('click', onHotspotClick);
 
 window.worldRenderer = worldRenderer;
 
 var isReadySent = false;
+var volume = 0;
 
 function onLoad() {
   if (!Util.isWebGLEnabled()) {
@@ -58,7 +66,6 @@ function onLoad() {
   }
 
   // Load the scene.
-  var scene = SceneInfo.loadFromGetParams();
   worldRenderer.setScene(scene);
 
   if (scene.isDebug) {
@@ -85,6 +92,9 @@ function onVideoTap() {
 
 function onRenderLoad(event) {
   if (event.videoElement) {
+
+    var scene = SceneInfo.loadFromGetParams();
+
     // On mobile, tell the user they need to tap to start. Otherwise, autoplay.
     if (Util.isMobile()) {
       // Tell user to tap to start.
@@ -97,21 +107,32 @@ function onRenderLoad(event) {
     // Attach to pause and play events, to notify the API.
     event.videoElement.addEventListener('pause', onPause);
     event.videoElement.addEventListener('play', onPlay);
+    event.videoElement.addEventListener('timeupdate', onGetCurrentTime);
+    event.videoElement.addEventListener('ended', onEnded);
   }
   // Hide loading indicator.
   loadIndicator.hide();
 
   // Autopan only on desktop, for photos only, and only if autopan is enabled.
-  if (!Util.isMobile() && !worldRenderer.sceneInfo.video &&
-      !worldRenderer.sceneInfo.isAutopanOff) {
+  if (!Util.isMobile() && !worldRenderer.sceneInfo.video && !worldRenderer.sceneInfo.isAutopanOff) {
     worldRenderer.autopan();
   }
 
   // Notify the API that we are ready, but only do this once.
   if (!isReadySent) {
-    Util.sendParentMessage({
-      type: 'ready' 
-    });
+    if (event.videoElement) {
+      Util.sendParentMessage({
+        type: 'ready',
+        data: {
+          duration: event.videoElement.duration
+        }
+      });
+    } else {
+      Util.sendParentMessage({
+        type: 'ready'
+      });
+    }
+
     isReadySent = true;
   }
 }
@@ -133,7 +154,9 @@ function onPauseRequest() {
 }
 
 function onAddHotspot(e) {
-  console.log('onAddHotspot', e);
+  if (Util.isDebug()) {
+    console.log('onAddHotspot', e);
+  }
   // TODO: Implement some validation?
 
   var pitch = parseFloat(e.pitch);
@@ -145,7 +168,9 @@ function onAddHotspot(e) {
 }
 
 function onSetContent(e) {
-  console.log('onSetContent', e);
+  if (Util.isDebug()) {
+    console.log('onSetContent', e);
+  }
   // Remove all of the hotspots.
   worldRenderer.hotspotRenderer.clearAll();
   // Fade to black.
@@ -157,7 +182,7 @@ function onSetContent(e) {
     // Update the URL to reflect the new scene. This is important particularily
     // on iOS where we use a fake fullscreen mode.
     var url = scene.getCurrentUrl();
-    console.log('Updating url to be %s', url);
+    //console.log('Updating url to be %s', url);
     window.history.pushState(null, 'VR View', url);
 
     // And set the new scene.
@@ -174,7 +199,54 @@ function onSetVolume(e) {
     onApiError('Attempt to set volume, but no video found.');
     return;
   }
+
   worldRenderer.videoProxy.setVolume(e.volumeLevel);
+  volume = e.volumeLevel;
+  Util.sendParentMessage({
+    type: 'volumechange',
+    data: e.volumeLevel
+  });
+}
+
+function onMuted(e) {
+  // Only work for video. If there's no video, send back an error.
+  if (!worldRenderer.videoProxy) {
+    onApiError('Attempt to mute, but no video found.');
+    return;
+  }
+
+  worldRenderer.videoProxy.mute(e.muteState);
+
+  Util.sendParentMessage({
+    type: 'muted',
+    data: e.muteState
+  });
+}
+
+function onUpdateCurrentTime(time) {
+  if (!worldRenderer.videoProxy) {
+    onApiError('Attempt to pause, but no video found.');
+    return;
+  }
+
+  worldRenderer.videoProxy.setCurrentTime(time);
+  onGetCurrentTime();
+}
+
+function onGetCurrentTime() {
+  var time = worldRenderer.videoProxy.getCurrentTime();
+  Util.sendParentMessage({
+    type: 'timeupdate',
+    data: time
+  });
+}
+
+function onSetFullscreen() {
+  if (!worldRenderer.videoProxy) {
+    onApiError('Attempt to set fullscreen, but no video found.');
+    return;
+  }
+  worldRenderer.manager.onFSClick_();
 }
 
 function onApiError(message) {
@@ -213,6 +285,13 @@ function onPause() {
   });
 }
 
+function onEnded() {
+    Util.sendParentMessage({
+      type: 'ended',
+      data: true
+    });
+}
+
 function onSceneError(message) {
   showError('Loader: ' + message);
 }
@@ -221,16 +300,20 @@ function onRenderError(message) {
   showError('Render: ' + message);
 }
 
-function showError(message, opt_title) {
+function showError(message) {
   // Hide loading indicator.
   loadIndicator.hide();
+
+  // Sanitize `message` as it could contain user supplied
+  // values. Re-add the space character as to not modify the
+  // error messages used throughout the codebase.
+  message = encodeURI(message).replace(/%20/g, ' ');
 
   var error = document.querySelector('#error');
   error.classList.add('visible');
   error.querySelector('.message').innerHTML = message;
 
-  var title = (opt_title !== undefined ? opt_title : 'Error');
-  error.querySelector('.title').innerHTML = title;
+  error.querySelector('.title').innerHTML = 'Error';
 }
 
 function hideError() {
@@ -274,4 +357,13 @@ function loop(time) {
   worldRenderer.render(time);
   worldRenderer.submitFrame();
   stats.end();
+}
+function onGetPosition() {
+    Util.sendParentMessage({
+        type: 'getposition',
+        data: {
+            Yaw: worldRenderer.camera.rotation.y * 180 / Math.PI,
+            Pitch: worldRenderer.camera.rotation.x * 180 / Math.PI
+        }
+    });
 }

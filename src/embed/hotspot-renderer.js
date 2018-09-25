@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 var EventEmitter = require('eventemitter3');
-var TWEEN = require('tween.js');
+var TWEEN = require('@tweenjs/tween.js');
+
+var Util = require('../util');
 
 // Constants for the focus/blur animation.
 var NORMAL_SCALE = new THREE.Vector3(1, 1, 1);
@@ -37,7 +39,7 @@ var FADE_END_ANGLE_DEG = 60;
  *   Adding and removing hotspots.
  *   Rendering the hotspots (debug mode only).
  *   Notifying when hotspots are interacted with.
- * 
+ *
  * Emits the following events:
  *   click (id): a hotspot is clicked.
  *   focus (id): a hotspot is focused.
@@ -92,7 +94,6 @@ HotspotRenderer.prototype = new EventEmitter();
  * @param hotspotId {String} The ID of the hotspot.
  */
 HotspotRenderer.prototype.add = function(pitch, yaw, radius, distance, id) {
-  console.log('HotspotRenderer.add', pitch, yaw, radius, distance, id);
   // If a hotspot already exists with this ID, stop.
   if (this.hotspots[id]) {
     // TODO: Proper error reporting.
@@ -104,10 +105,10 @@ HotspotRenderer.prototype.add = function(pitch, yaw, radius, distance, id) {
 
   // Position the hotspot based on the pitch and yaw specified.
   var quat = new THREE.Quaternion();
-  quat.setFromEuler(new THREE.Euler(THREE.Math.degToRad(pitch), THREE.Math.degToRad(yaw), 0));
+  quat.setFromEuler(new THREE.Euler(THREE.Math.degToRad(pitch), THREE.Math.degToRad(yaw), 0, 'ZYX'));
   hotspot.position.applyQuaternion(quat);
   hotspot.lookAt(new THREE.Vector3());
-  
+
   this.hotspotRoot.add(hotspot);
   this.hotspots[id] = hotspot;
 }
@@ -119,7 +120,7 @@ HotspotRenderer.prototype.add = function(pitch, yaw, radius, distance, id) {
  */
 HotspotRenderer.prototype.remove = function(id) {
   // If there's no hotspot with this ID, fail.
-  if (!this.hotspots[id]) { 
+  if (!this.hotspots[id]) {
     // TODO: Proper error reporting.
     console.error('Attempt to remove non-existing hotspot with id %s.', id);
     return;
@@ -156,7 +157,7 @@ HotspotRenderer.prototype.update = function(camera) {
     this.pointer.set(0, 0);
   }
   // Update the picking ray with the camera and mouse position.
-  this.raycaster.setFromCamera(this.pointer, camera);	
+  this.raycaster.setFromCamera(this.pointer, camera);
 
   // Fade hotspots out if they are really far from center to avoid overly
   // distorted visuals.
@@ -218,7 +219,7 @@ HotspotRenderer.prototype.onTouchStart_ = function(e) {
 
 HotspotRenderer.prototype.onTouchEnd_ = function(e) {
   // If no hotspots are pressed, emit an empty click event.
-  if (!this.downHotspots) {
+  if (Util.isEmptyObject(this.downHotspots)) {
     this.emit('click');
     return;
   }
@@ -235,7 +236,7 @@ HotspotRenderer.prototype.updateTouch_ = function(e) {
   var size = this.getSize_();
   var touch = e.touches[0];
 	this.pointer.x = (touch.clientX / size.width) * 2 - 1;
-	this.pointer.y = - (touch.clientY / size.height) * 2 + 1;	
+	this.pointer.y = - (touch.clientY / size.height) * 2 + 1;
 };
 
 HotspotRenderer.prototype.onMouseDown_ = function(e) {
@@ -256,7 +257,7 @@ HotspotRenderer.prototype.onMouseUp_ = function(e) {
   this.updateMouse_(e);
 
   // If no hotspots are pressed, emit an empty click event.
-  if (!this.downHotspots) {
+  if (Util.isEmptyObject(this.downHotspots)) {
     this.emit('click');
     return;
   }
@@ -273,7 +274,7 @@ HotspotRenderer.prototype.onMouseUp_ = function(e) {
 HotspotRenderer.prototype.updateMouse_ = function(e) {
   var size = this.getSize_();
 	this.pointer.x = (e.clientX / size.width) * 2 - 1;
-	this.pointer.y = - (e.clientY / size.height) * 2 + 1;	
+	this.pointer.y = - (e.clientY / size.height) * 2 + 1;
 };
 
 HotspotRenderer.prototype.getSize_ = function() {
@@ -303,7 +304,7 @@ HotspotRenderer.prototype.createHotspot_ = function(radius, distance) {
   // Position at the extreme end of the sphere.
   var hotspot = new THREE.Object3D();
   hotspot.position.z = -distance;
-  hotspot.scale.set(NORMAL_SCALE);
+  hotspot.scale.copy(NORMAL_SCALE);
 
   hotspot.add(inner);
   hotspot.add(outer);
@@ -352,6 +353,12 @@ HotspotRenderer.prototype.focus_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(FOCUS_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
+  
+  if (this.worldRenderer.isVRMode()) {
+    this.timeForHospotClick = setTimeout(function () {
+      this.emit('click', id);
+    }, 1200 )
+  }
 };
 
 HotspotRenderer.prototype.blur_ = function(id) {
@@ -360,6 +367,10 @@ HotspotRenderer.prototype.blur_ = function(id) {
   this.tween = new TWEEN.Tween(hotspot.scale).to(NORMAL_SCALE, FOCUS_DURATION)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
+  
+  if (this.timeForHospotClick) {
+    clearTimeout( this.timeForHospotClick );
+  }
 };
 
 HotspotRenderer.prototype.down_ = function(id) {

@@ -74,6 +74,37 @@ VideoProxy.prototype.setVolume = function(volumeLevel) {
 };
 
 /**
+ * Set the attribute mute of the elements according with the muteState param.
+ *
+ * @param bool muteState
+ */
+VideoProxy.prototype.mute = function(muteState) {
+  if (this.videoElement) {
+    this.videoElement.muted = muteState;
+  }
+  if (this.audioElement) {
+    this.audioElement.muted = muteState;
+  }
+};
+
+VideoProxy.prototype.getCurrentTime = function() {
+  return Util.isIOS9OrLess() ? this.audioElement.currentTime : this.videoElement.currentTime;
+};
+
+/**
+ *
+ * @param {Object} time
+ */
+VideoProxy.prototype.setCurrentTime = function(time) {
+  if (this.videoElement) {
+    this.videoElement.currentTime = time.currentTime;
+  }
+  if (this.audioElement) {
+    this.audioElement.currentTime = time.currentTime;
+  }
+};
+
+/**
  * Called on RAF to progress playback.
  */
 VideoProxy.prototype.update = function() {
