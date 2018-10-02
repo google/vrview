@@ -28,7 +28,9 @@ var CAMEL_TO_UNDERSCORE = {
   isDebug: 'is_debug',
   isVROff: 'is_vr_off',
   isAutopanOff: 'is_autopan_off',
-  hideFullscreenButton: 'hide_fullscreen_button'
+  hideFullscreenButton: 'hide_fullscreen_button',
+  isSideBySide: 'is_sbs',
+  is180: 'is_180'
 };
 
 /**
@@ -48,6 +50,8 @@ function SceneInfo(opt_params) {
   this.defaultYaw = THREE.Math.degToRad(params.defaultYaw || 0);
 
   this.isStereo = Util.parseBoolean(params.isStereo);
+  this.isSideBySide = Util.parseBoolean(params.isSideBySide);
+  this.is180 = Util.parseBoolean(params.is180);
   this.isYawOnly = Util.parseBoolean(params.isYawOnly);
   this.isDebug = Util.parseBoolean(params.isDebug);
   this.isVROff = Util.parseBoolean(params.isVROff);

@@ -39,6 +39,8 @@ SphereRenderer.prototype.setPhotosphere = function(src, opt_params) {
     var params = opt_params || {};
 
     this.isStereo = !!params.isStereo;
+    this.isSideBySide = !!params.isSideBySide;
+    this.is180 = !!params.is180;
     this.src = src;
 
     // Load texture.
@@ -52,7 +54,7 @@ SphereRenderer.prototype.setPhotosphere = function(src, opt_params) {
 /**
  * @return {Promise} Yeah.
  */
-SphereRenderer.prototype.set360Video = function (videoElement, videoType, opt_params) {
+SphereRenderer.prototype.setVideo = function (videoElement, videoType, opt_params) {
   return new Promise(function(resolve, reject) {
     this.resolve = resolve;
     this.reject = reject;
@@ -60,6 +62,8 @@ SphereRenderer.prototype.set360Video = function (videoElement, videoType, opt_pa
     var params = opt_params || {};
 
     this.isStereo = !!params.isStereo;
+    this.isSideBySide = !!params.isSideBySide;
+    this.is180 = !!params.is180;
 
     // Load the video texture.
     var videoTexture = new THREE.VideoTexture(videoElement);
@@ -110,8 +114,13 @@ SphereRenderer.prototype.onTextureLoaded_ = function(texture) {
   var sphereLeft;
   var sphereRight;
   if (this.isStereo) {
-    sphereLeft = this.createPhotosphere_(texture, {offsetY: 0.5, scaleY: 0.5});
-    sphereRight = this.createPhotosphere_(texture, {offsetY: 0, scaleY: 0.5});
+    if (this.isSideBySide) {
+      sphereLeft = this.createPhotosphere_(texture, {offsetX: 0.5, scaleX: 0.5});
+      sphereRight = this.createPhotosphere_(texture, {offsetX: 0, scaleX: 0.5});
+    } else {
+      sphereLeft = this.createPhotosphere_(texture, {offsetY: 0.5, scaleY: 0.5});
+      sphereRight = this.createPhotosphere_(texture, {offsetY: 0, scaleY: 0.5});
+    }
   } else {
     sphereLeft = this.createPhotosphere_(texture);
     sphereRight = this.createPhotosphere_(texture);
@@ -125,8 +134,7 @@ SphereRenderer.prototype.onTextureLoaded_ = function(texture) {
   sphereRight.eye = Eyes.RIGHT;
   sphereRight.name = 'eyeRight';
 
-
-    this.scene.getObjectByName('photo').children = [sphereLeft, sphereRight];
+  this.scene.getObjectByName('photo').children = [sphereLeft, sphereRight];
 
   this.resolve();
 };
@@ -142,8 +150,8 @@ SphereRenderer.prototype.createPhotosphere_ = function(texture, opt_params) {
   p.scaleY = p.scaleY || 1;
   p.offsetX = p.offsetX || 0;
   p.offsetY = p.offsetY || 0;
-  p.phiStart = p.phiStart || 0;
-  p.phiLength = p.phiLength || Math.PI * 2;
+  p.phiStart = p.phiStart || this.is180 ? Math.PI * 0.5 : 0;
+  p.phiLength = p.phiLength || Math.PI * (this.is180 ? 1 : 2);
   p.thetaStart = p.thetaStart || 0;
   p.thetaLength = p.thetaLength || Math.PI;
 
