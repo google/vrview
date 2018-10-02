@@ -20,6 +20,8 @@ Name | Type | Parameter description
 `height` | String | String value for the iframe's height attribute.
 `preview` | String | (Optional) URL to a preview image for a 360° image file.
 `is_stereo` | Boolean | (Optional) Indicates whether the content at the image or video URL is stereo or not.
+`is_sbs` | Boolean | (Optional) Indicates whether the content at image or video URL is Side-By-Side or Over-Under. Defaults to Over-Under (false).
+`is_180` | Boolean | (Optional) Indicates whether the content at image or video URL is VR180 or VR360. Defaults to VR360 (false).
 `is_debug` | Boolean | (Optional) When true, turns on debug features like rendering hotspots ad showing the FPS meter.
 `is_vr_off` | Boolean | (Optional) When true, disables the VR mode button.
 `is_autopan_off` | Boolean | (Optional) When true, disables the autopan introduction on desktop.
