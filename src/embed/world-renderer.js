@@ -83,6 +83,8 @@ WorldRenderer.prototype.setScene = function(scene) {
 
   var params = {
     isStereo: scene.isStereo,
+    isSideBySide: scene.isSideBySide,
+    is180: scene.is180,
     loop: scene.loop,
     volume: scene.volume,
     muted: scene.muted
@@ -142,7 +144,7 @@ WorldRenderer.prototype.setScene = function(scene) {
     } else {
       this.player = new AdaptivePlayer(params);
       this.player.on('load', function(videoElement, videoType) {
-        self.sphereRenderer.set360Video(videoElement, videoType, params).then(function() {
+        self.sphereRenderer.setVideo(videoElement, videoType, params).then(function() {
           self.didLoad_({videoElement: videoElement});
         }).catch(self.didLoadFail_.bind(self));
       });
