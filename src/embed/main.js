@@ -135,6 +135,11 @@ function onRenderLoad(event) {
 
     isReadySent = true;
   }
+
+  // Notify the scene has been loaded.
+  Util.sendParentMessage({
+    type: 'loadedscene'
+  });
 }
 
 function onPlayRequest() {

@@ -199,6 +199,7 @@ Player.prototype.onMessage_ = function(event) {
     case 'click':
     case 'ended':
     case 'getposition':
+    case 'loadedscene':
       this.emit(type, data);
       break;
     case 'volumechange':
